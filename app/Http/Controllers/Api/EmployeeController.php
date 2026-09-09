@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Designation;
 use App\Models\User;
+use App\Mail\WelcomeEmployeeMail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -68,10 +70,12 @@ class EmployeeController extends Controller
         $data = $validator->validated();
         $designation = Designation::find($data['designation_id']);
 
+        $plainPassword = $data['password'] ?? '';
+
         $employee = User::create([
             ...Arr::except($data, ['password', 'designation_id']),
             'email' => strtolower(trim($data['email'])),
-            'password' => Hash::make($data['password'] ?? Str::random(32)),
+            'password' => Hash::make($plainPassword ?: Str::random(16)),
             'role' => 'employee',
             'designation_id' => $designation->id,
             'designation' => $designation->name,
@@ -79,9 +83,16 @@ class EmployeeController extends Controller
             'status' => $data['status'] ?? 'Active',
         ]);
 
+        try {
+            Mail::to($employee->email)->send(new WelcomeEmployeeMail($employee, $plainPassword));
+        } catch (\Throwable $e) {
+            // Log mail failure without interrupting response
+            \Illuminate\Support\Facades\Log::error('Failed sending welcome email to employee: ' . $e->getMessage());
+        }
+
         return response()->json([
             'status' => true,
-            'message' => 'Employee created successfully.',
+            'message' => 'Employee created successfully and welcome email sent.',
             'data' => $this->loadEmployee($employee),
         ], 201);
     }

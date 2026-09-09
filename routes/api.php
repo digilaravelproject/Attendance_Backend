@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Controllers\Api\AdminAuthController;
+use App\Http\Controllers\Api\AssignedShiftController;
 use App\Http\Controllers\Api\DesignationController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\ShiftController;
+use App\Http\Controllers\Api\ShiftRotationController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -70,6 +73,38 @@ Route::prefix('admin')->group(function () {
         Route::put('/roles/{id}', [RoleController::class, 'update']);
         Route::post('/roles/{id}', [RoleController::class, 'update']);
         Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+
+        // Requirement 5: Shift Management Overview & Statistics (Screenshot 4)
+        Route::get('/shifts/overview', [ShiftController::class, 'overview']);
+        Route::get('/shift-management/overview', [ShiftController::class, 'overview']);
+
+        // Requirement 2: Shift CRUD APIs (Screenshot 1)
+        Route::get('/shifts', [ShiftController::class, 'index']);
+        Route::post('/shifts', [ShiftController::class, 'store']);
+        Route::get('/shifts/{id}', [ShiftController::class, 'show']);
+        Route::put('/shifts/{id}', [ShiftController::class, 'update']);
+        Route::post('/shifts/{id}', [ShiftController::class, 'update']);
+        Route::delete('/shifts/{id}', [ShiftController::class, 'destroy']);
+
+        // Requirement 3: Assign Shift APIs (Screenshot 2)
+        Route::get('/assigned-shifts', [AssignedShiftController::class, 'index']);
+        Route::post('/assigned-shifts', [AssignedShiftController::class, 'store']);
+        Route::get('/assigned-shifts/{id}', [AssignedShiftController::class, 'show']);
+        Route::put('/assigned-shifts/{id}', [AssignedShiftController::class, 'update']);
+        Route::post('/assigned-shifts/{id}', [AssignedShiftController::class, 'update']);
+        Route::delete('/assigned-shifts/{id}', [AssignedShiftController::class, 'destroy']);
+
+        // Requirement 4: Shift Rotation APIs (Screenshot 3 - Parts 1, 2, 3)
+        Route::get('/shift-rotations', [ShiftRotationController::class, 'index']);
+        Route::post('/shift-rotations', [ShiftRotationController::class, 'store']);
+        Route::get('/shift-rotations/{id}', [ShiftRotationController::class, 'show']);
+        Route::put('/shift-rotations/{id}', [ShiftRotationController::class, 'update']);
+        Route::post('/shift-rotations/{id}', [ShiftRotationController::class, 'update']);
+        Route::post('/shift-rotations/{id}/assign-users', [ShiftRotationController::class, 'assignUsers']);
+        Route::delete('/shift-rotations/{id}/users/{userId}', [ShiftRotationController::class, 'removeUser']);
+        Route::post('/shift-rotations/{id}/remove-user', [ShiftRotationController::class, 'removeUser']);
+        Route::delete('/shift-rotations/{id}/remove-user', [ShiftRotationController::class, 'removeUser']);
+        Route::delete('/shift-rotations/{id}', [ShiftRotationController::class, 'destroy']);
 
         // Auth
         Route::post('/logout', [AdminAuthController::class, 'logout']);
