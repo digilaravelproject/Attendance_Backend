@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Mail\SendOtpMail;
+use App\Models\Admin;
+use App\Models\AdminDocument;
 use App\Models\PasswordOtp;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Throwable;
 
 class AdminAuthController extends Controller
@@ -24,7 +27,7 @@ class AdminAuthController extends Controller
             'company_name' => 'required|string|max:255',
             'owner_name' => 'required|string|max:255',
             'mobile_number' => 'required|string|regex:/^[0-9]{10}$/',
-            'email' => 'required|string|email|max:255|unique:users,email',
+            'email' => 'required|string|email|max:255|unique:admins,email',
             'password' => 'required|string|min:6|confirmed',
         ], [
             'mobile_number.regex' => 'The mobile number must be exactly 10 digits.',
@@ -39,14 +42,13 @@ class AdminAuthController extends Controller
             ], 422);
         }
 
-        $user = User::create([
+        $user = Admin::create([
             'name' => $request->owner_name,
             'company_name' => $request->company_name,
             'owner_name' => $request->owner_name,
             'mobile_number' => $request->mobile_number,
             'email' => strtolower(trim($request->email)),
             'password' => Hash::make($request->password),
-            'role' => 'admin',
         ]);
 
         $token = $user->createToken('admin_auth_token')->plainTextToken;
@@ -54,7 +56,7 @@ class AdminAuthController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Account created successfully.',
-            'data' => $user,
+            'data' => $this->profileData($user),
             'access_token' => $token,
             'token_type' => 'Bearer',
         ], 201);
@@ -78,7 +80,7 @@ class AdminAuthController extends Controller
             ], 422);
         }
 
-        $user = User::where('email', strtolower(trim($request->email)))->first();
+        $user = Admin::where('email', strtolower(trim($request->email)))->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -92,7 +94,7 @@ class AdminAuthController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Login successful.',
-            'data' => $user,
+            'data' => $this->profileData($user),
             'access_token' => $token,
             'token_type' => 'Bearer',
         ], 200);
@@ -104,7 +106,7 @@ class AdminAuthController extends Controller
     public function forgotPassword(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:users,email',
+            'email' => 'required|email|exists:admins,email',
         ], [
             'email.exists' => 'We could not find an account registered with this email address.',
         ]);
@@ -118,7 +120,7 @@ class AdminAuthController extends Controller
         }
 
         $email = strtolower(trim($request->email));
-        $user = User::where('email', $email)->first();
+        $user = Admin::where('email', $email)->first();
 
         // Generate 6-digit OTP
         $otp = str_pad((string) random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
@@ -153,7 +155,7 @@ class AdminAuthController extends Controller
     public function resetPassword(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:users,email',
+            'email' => 'required|email|exists:admins,email',
             'otp' => 'required|string|size:6',
             'password' => 'required|string|min:6|confirmed',
         ], [
@@ -189,7 +191,7 @@ class AdminAuthController extends Controller
         }
 
         // Update User Password
-        $user = User::where('email', $email)->first();
+        $user = Admin::where('email', $email)->first();
         $user->password = Hash::make($request->password);
         $user->save();
 
@@ -213,7 +215,7 @@ class AdminAuthController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Profile details retrieved successfully.',
-            'data' => $request->user(),
+            'data' => $this->profileData($request->user()),
         ], 200);
     }
 
@@ -230,7 +232,7 @@ class AdminAuthController extends Controller
             'company_name' => 'sometimes|nullable|string|max:255',
             'mobile_number' => 'sometimes|nullable|string',
             'phone' => 'sometimes|nullable|string',
-            'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'sometimes|required|string|email|max:255|unique:admins,email,' . $user->id,
             'department' => 'sometimes|nullable|string|max:255',
             'designation' => 'sometimes|nullable|string|max:255',
             'employee_id' => 'sometimes|nullable|string|max:255',
@@ -238,6 +240,8 @@ class AdminAuthController extends Controller
             'address' => 'sometimes|nullable|string',
             'status' => 'sometimes|nullable|string|max:50',
             'avatar' => 'sometimes|nullable',
+            'documents' => 'sometimes|nullable|array|max:10',
+            'documents.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png',
         ], [
             'email.unique' => 'This email address is already in use by another account.',
         ]);
@@ -313,11 +317,43 @@ class AdminAuthController extends Controller
 
         $user->save();
 
+        foreach ($request->file('documents', []) as $document) {
+            $path = $document->store('admin-documents/' . $user->id, 'public');
+            $user->documents()->create([
+                'original_name' => $document->getClientOriginalName(),
+                'file_name' => Str::afterLast($path, '/'),
+                'file_path' => $path,
+                'mime_type' => $document->getMimeType(),
+                'size' => $document->getSize(),
+            ]);
+        }
+
         return response()->json([
             'status' => true,
             'message' => 'Profile updated successfully.',
-            'data' => $user->fresh(),
+            'data' => $this->profileData($user->fresh()),
         ], 200);
+    }
+
+    public function deleteDocument(Request $request, string $document): JsonResponse
+    {
+        $adminDocument = AdminDocument::where('admin_id', $request->user()->id)->find($document);
+
+        if (! $adminDocument) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Document not found.',
+            ], 404);
+        }
+
+        Storage::disk('public')->delete($adminDocument->file_path);
+        $adminDocument->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Document deleted successfully.',
+            'data' => $this->profileData($request->user()->fresh()),
+        ]);
     }
 
     /**
@@ -384,5 +420,26 @@ class AdminAuthController extends Controller
             'status' => true,
             'message' => 'Logged out successfully.',
         ], 200);
+    }
+
+    private function profileData(Admin $admin): array
+    {
+        $data = $admin->toArray();
+        $data['documents'] = $admin->documents()
+            ->latest()
+            ->get()
+            ->map(fn (AdminDocument $document) => [
+                'id' => $document->id,
+                'original_name' => $document->original_name,
+                'file_name' => $document->file_name,
+                'mime_type' => $document->mime_type,
+                'size' => $document->size,
+                'url' => asset('storage/' . $document->file_path),
+                'created_at' => $document->created_at,
+            ])
+            ->values()
+            ->all();
+
+        return $data;
     }
 }

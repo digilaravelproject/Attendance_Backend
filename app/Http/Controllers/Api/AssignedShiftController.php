@@ -80,7 +80,8 @@ class AssignedShiftController extends Controller
 
         $data = $validator->validated();
         $shift = Shift::findOrFail($data['shift_id']);
-        $assignedBy = $request->user()?->id;
+        // assigned_by references users; separate admin accounts are not stored in that table.
+        $assignedBy = $request->user() instanceof User ? $request->user()->id : null;
 
         // Resolve dates array
         $dates = [];

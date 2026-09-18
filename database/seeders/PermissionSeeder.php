@@ -4,199 +4,110 @@ namespace Database\Seeders;
 
 use App\Models\Permission;
 use App\Models\Role;
-use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PermissionSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $modules = [
-            [
-                'name' => 'Dashboard',
-                'slug' => 'dashboard',
-                'description' => 'Manage dashboard data',
+        $groups = [
+            'Profile & Documents' => [
+                'View Profile Details', 'Edit Profile Info', 'Change Avatar', 'View Address',
+                'View Bank Details', 'Edit Bank Details', 'View Documents', 'Upload Documents',
+                'Zoom & Preview Document', 'Delete Documents',
             ],
-            [
-                'name' => 'Users',
-                'slug' => 'users',
-                'description' => 'Manage users data',
+            'Attendance & Regularization' => [
+                'View Attendance Screen', 'Check-In / Check-Out', 'View Attendance History',
+                'Request Regularization', 'Approve Regularization', 'View Team Attendance',
+                'Export Attendance',
             ],
-            [
-                'name' => 'Employees',
-                'slug' => 'employees',
-                'description' => 'Manage employee data',
+            'Leave Management' => [
+                'View Leave Dashboard', 'Apply for Leave', 'Cancel Leave', 'View Leave Balance',
+                'Approve / Reject Leave', 'All Employees Requests', 'View Leave Policy',
             ],
-            [
-                'name' => 'Attendance',
-                'slug' => 'attendance',
-                'description' => 'Manage attendance data',
+            'Employee Management' => [
+                'View Employee Directory', 'Add New Employee', 'Edit Employee Details',
+                'Delete Employee', 'View Salary Structure', 'Edit Salary Structure',
+                'View Uploaded Documents',
             ],
-            [
-                'name' => 'Leaves',
-                'slug' => 'leaves',
-                'description' => 'Manage leaves data',
+            'Tasks & Projects' => [
+                'View Tasks', 'Create Task', 'Edit Task', 'Delete Task', 'Assign Task',
+                'Daily Task Update', 'View Projects', 'Create Project', 'Edit Project', 'Delete Project',
             ],
-            [
-                'name' => 'Payroll',
-                'slug' => 'payroll',
-                'description' => 'Manage payroll data',
+            'Departments & Designations' => [
+                'View Departments', 'Add Department', 'Edit Department', 'Delete Department',
+                'View Designations', 'Add Designation', 'Edit Designation', 'Delete Designation',
             ],
-            [
-                'name' => 'Reports',
-                'slug' => 'reports',
-                'description' => 'Manage reports data',
+            'Payroll & Salary' => [
+                'View My Salary', 'Manage Company Payroll', 'Process Monthly Payroll', 'Download Payslip',
             ],
-            [
-                'name' => 'Settings',
-                'slug' => 'settings',
-                'description' => 'Manage settings data',
+            'Assets Management' => [
+                'View Assets', 'Add New Asset', 'Edit Asset Details', 'Assign Asset to Staff',
+                'Accept Asset Return',
+            ],
+            'Clients & Leads (CRM)' => [
+                'View Leads', 'Add Lead', 'Edit Lead', 'Delete Lead', 'Assign Sales Team',
+                'Update Lead Status', 'View Clients', 'Create Client', 'Edit Client',
+            ],
+            'Meetings & Follow-ups' => [
+                'View Meetings', 'Schedule Meeting', 'Edit / Reschedule Meeting', 'Add Meeting Notes',
+            ],
+            'Documents & Folders' => [
+                'Browse Document Folders', 'Upload Documents', 'Delete Documents', 'Manage Access Control',
+            ],
+            'Company Profile & Policies' => [
+                'View Company Profile', 'Edit Company Profile', 'Read Compliance Policies',
+                'Upload Compliance Policies',
+            ],
+            'Roles & Permissions (RBAC)' => [
+                'View Roles List', 'Create New Role', 'Edit Role & Permissions', 'Delete Role',
             ],
         ];
 
-        $actions = ['view', 'add', 'edit', 'delete'];
+        DB::transaction(function () use ($groups) {
+            $permissionIds = [];
 
-        $createdPermissions = [];
+            foreach ($groups as $module => $permissionNames) {
+                $moduleSlug = Str::slug($module, '_');
 
-        foreach ($modules as $mod) {
-            foreach ($actions as $act) {
-                $perm = Permission::updateOrCreate(
-                    [
-                        'module_slug' => $mod['slug'],
-                        'action' => $act,
-                    ],
-                    [
-                        'module' => $mod['name'],
-                        'name' => $act . '_' . $mod['slug'],
-                        'description' => $mod['description'],
-                    ]
-                );
-                $createdPermissions[$mod['slug']][$act] = $perm->id;
+                foreach ($permissionNames as $permissionName) {
+                    $action = Str::slug($permissionName, '_');
+                    $permission = Permission::updateOrCreate(
+                        ['module_slug' => $moduleSlug, 'action' => $action],
+                        [
+                            'module' => $module,
+                            'name' => $permissionName,
+                            'description' => $this->descriptionFor($permissionName),
+                        ]
+                    );
+                    $permissionIds[] = $permission->id;
+                }
             }
-        }
 
-        // Seed Roles matching Screenshot 3
-        $adminRole = Role::updateOrCreate(
-            ['name' => 'Admin'],
-            ['description' => 'Full system access', 'status' => true]
-        );
+            Permission::whereNotIn('id', $permissionIds)->delete();
 
-        $hrRole = Role::updateOrCreate(
-            ['name' => 'HR Manager'],
-            ['description' => 'Manage HR & Employee', 'status' => true]
-        );
+            $adminRole = Role::updateOrCreate(
+                ['name' => 'Admin'],
+                [
+                    'department' => 'Management',
+                    'description' => 'Full system access',
+                    'status' => true,
+                ]
+            );
+            $adminRole->permissions()->sync($permissionIds);
+        });
+    }
 
-        $managerRole = Role::updateOrCreate(
-            ['name' => 'Manager'],
-            ['description' => 'Manage team & projects', 'status' => true]
-        );
-
-        $teamLeadRole = Role::updateOrCreate(
-            ['name' => 'Team Lead'],
-            ['description' => 'Team supervision', 'status' => true]
-        );
-
-        // Admin Permissions matching Screenshot 1 (26 total permissions)
-        // Dashboard: view, add, edit, delete (4)
-        // Users: view, add, edit, delete (4)
-        // Employees: view, add, edit, delete (4)
-        // Attendance: view, add, edit, delete (4)
-        // Leaves: view, add, edit, delete (4)
-        // Payroll: view, add, edit (3)
-        // Reports: view (1)
-        // Settings: view, add (2)
-        $adminPermissionIds = [
-            // Dashboard
-            $createdPermissions['dashboard']['view'],
-            $createdPermissions['dashboard']['add'],
-            $createdPermissions['dashboard']['edit'],
-            $createdPermissions['dashboard']['delete'],
-            // Users
-            $createdPermissions['users']['view'],
-            $createdPermissions['users']['add'],
-            $createdPermissions['users']['edit'],
-            $createdPermissions['users']['delete'],
-            // Employees
-            $createdPermissions['employees']['view'],
-            $createdPermissions['employees']['add'],
-            $createdPermissions['employees']['edit'],
-            $createdPermissions['employees']['delete'],
-            // Attendance
-            $createdPermissions['attendance']['view'],
-            $createdPermissions['attendance']['add'],
-            $createdPermissions['attendance']['edit'],
-            $createdPermissions['attendance']['delete'],
-            // Leaves
-            $createdPermissions['leaves']['view'],
-            $createdPermissions['leaves']['add'],
-            $createdPermissions['leaves']['edit'],
-            $createdPermissions['leaves']['delete'],
-            // Payroll
-            $createdPermissions['payroll']['view'],
-            $createdPermissions['payroll']['add'],
-            $createdPermissions['payroll']['edit'],
-            // Reports
-            $createdPermissions['reports']['view'],
-            // Settings
-            $createdPermissions['settings']['view'],
-            $createdPermissions['settings']['add'],
-        ];
-
-        $adminRole->permissions()->sync($adminPermissionIds);
-
-        // HR Manager Permissions (18 permissions)
-        $hrPermissionIds = array_slice(array_values(Permission::pluck('id')->toArray()), 0, 18);
-        $hrRole->permissions()->sync($hrPermissionIds);
-
-        // Manager Permissions (8 permissions)
-        $managerPermissionIds = array_slice(array_values(Permission::pluck('id')->toArray()), 0, 8);
-        $managerRole->permissions()->sync($managerPermissionIds);
-
-        // Team Lead Permissions (7 permissions)
-        $teamLeadPermissionIds = array_slice(array_values(Permission::pluck('id')->toArray()), 0, 7);
-        $teamLeadRole->permissions()->sync($teamLeadPermissionIds);
-
-        // Seed assigned Users matching Screenshot 2 (John Doe, Sarah Smith, Michael Brown)
-        $user1 = User::updateOrCreate(
-            ['email' => 'john.doe@example.com'],
-            [
-                'name' => 'John Doe',
-                'password' => Hash::make('password'),
-                'department' => 'Management',
-                'designation' => 'Administrator',
-                'status' => 'active',
-            ]
-        );
-
-        $user2 = User::updateOrCreate(
-            ['email' => 'sarah.smith@example.com'],
-            [
-                'name' => 'Sarah Smith',
-                'password' => Hash::make('password'),
-                'department' => 'HR',
-                'designation' => 'HR Executive',
-                'status' => 'active',
-            ]
-        );
-
-        $user3 = User::updateOrCreate(
-            ['email' => 'michael.brown@example.com'],
-            [
-                'name' => 'Michael Brown',
-                'password' => Hash::make('password'),
-                'department' => 'IT',
-                'designation' => 'Lead Developer',
-                'status' => 'active',
-            ]
-        );
-
-        $adminRole->users()->sync([$user1->id, $user2->id, $user3->id]);
-        $hrRole->users()->sync([$user2->id]);
-        $managerRole->users()->sync([$user3->id]);
-        $teamLeadRole->users()->sync([$user1->id, $user3->id]);
+    private function descriptionFor(string $permission): string
+    {
+        return match ($permission) {
+            'View My Salary' => 'See personal payslip and salary history',
+            'Manage Company Payroll' => 'Access company-wide payroll module',
+            'Process Monthly Payroll' => 'Calculate and generate monthly payroll',
+            'Download Payslip' => 'Generate and download salary PDF slip',
+            default => $permission,
+        };
     }
 }

@@ -10,6 +10,16 @@ use Illuminate\Http\Request;
 
 class PermissionController extends Controller
 {
+    public function total(): JsonResponse
+    {
+        return response()->json([
+            'status' => true,
+            'message' => 'Total permission count retrieved successfully.',
+            'total_permissions' => Permission::count(),
+            'total_categories' => Permission::distinct()->count('module_slug'),
+        ]);
+    }
+
     /**
      * Get permission list with action status for a role (Requirement 2 & Screenshot 1)
      */
@@ -41,7 +51,7 @@ class PermissionController extends Controller
                 $groupedModules[$slug] = [
                     'module' => $perm->module,
                     'module_slug' => $slug,
-                    'description' => $perm->description,
+                    'permissions' => [],
                     'actions' => [],
                 ];
             }
@@ -54,7 +64,27 @@ class PermissionController extends Controller
                 'status' => $isAllowed ? 'allowed' : 'not_allowed',
                 'allowed' => $isAllowed,
             ];
+            $groupedModules[$slug]['permissions'][] = [
+                'id' => $perm->id,
+                'name' => $perm->name,
+                'slug' => $perm->action,
+                'description' => $perm->description,
+                'is_assigned' => $isAllowed,
+                'status' => $isAllowed ? 'allowed' : 'not_allowed',
+            ];
         }
+
+        $groupedModules = array_map(function (array $module) {
+            $module['total_permissions'] = count($module['permissions']);
+            $module['assigned_permissions_count'] = count(array_filter(
+                $module['permissions'],
+                fn (array $permission) => $permission['is_assigned']
+            ));
+            $module['all_assigned'] = $module['total_permissions'] > 0
+                && $module['assigned_permissions_count'] === $module['total_permissions'];
+
+            return $module;
+        }, $groupedModules);
 
         // Format flat permissions list
         $permissionsList = $allPermissions->map(function ($perm) use ($assignedPermissionIds) {
@@ -78,8 +108,11 @@ class PermissionController extends Controller
                 'id' => $role->id,
                 'name' => $role->name,
                 'description' => $role->description,
+                'department' => $role->department,
+                'status' => $role->status,
             ] : null,
             'total_permissions' => $allPermissions->count(),
+            'total_categories' => count($groupedModules),
             'assigned_permissions_count' => count($assignedPermissionIds),
             'modules' => array_values($groupedModules),
             'data' => $permissionsList,

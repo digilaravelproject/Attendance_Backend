@@ -28,17 +28,17 @@ class WelcomeEmployeeMail extends Mailable
     /**
      * Get the message envelope.
      */
-    public function getEnvelope(): Envelope
+    public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Welcome to the Team! Account Details & Information',
+            subject: 'Welcome aboard, ' . $this->employee->name . ' — your employee account is ready',
         );
     }
 
     /**
      * Get the message content definition.
      */
-    public function getContent(): Content
+    public function content(): Content
     {
         return new Content(
             view: 'emails.welcome_employee',

@@ -21,7 +21,7 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
         .header {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #2563eb 100%);
             color: #ffffff;
             padding: 35px 30px;
             text-align: center;
@@ -124,11 +124,31 @@
             color: #94a3b8;
             border-top: 1px solid #e2e8f0;
         }
+        .eyebrow {
+            display: inline-block;
+            padding: 6px 12px;
+            margin-bottom: 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.16);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .credential {
+            font-family: Consolas, monospace;
+            background: #e0e7ff;
+            color: #1e3a8a;
+            padding: 5px 8px;
+            border-radius: 5px;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
+            <div class="eyebrow">Employee onboarding</div>
             <h1>Welcome to {{ config('app.name', 'Attendance System') }}</h1>
             <p>We are excited to have you on board!</p>
         </div>
@@ -156,6 +176,14 @@
                         <td class="value">{{ $employee->designationDetails->name ?? $employee->designation ?? 'N/A' }}</td>
                     </tr>
                     <tr>
+                        <td class="label">Department:</td>
+                        <td class="value">{{ $employee->department ?? 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Work Arrangement:</td>
+                        <td class="value">{{ $employee->work_mode ?? 'N/A' }} · {{ $employee->employee_type ?? 'N/A' }}</td>
+                    </tr>
+                    <tr>
                         <td class="label">Mobile Number:</td>
                         <td class="value">{{ $employee->mobile_number }}</td>
                     </tr>
@@ -171,19 +199,19 @@
                 <table class="info-table">
                     <tr>
                         <td class="label">Portal Email:</td>
-                        <td class="value"><strong>{{ $employee->email }}</strong></td>
+                        <td class="value"><span class="credential">{{ $employee->email }}</span></td>
                     </tr>
                     @if(!empty($password))
                     <tr>
                         <td class="label">Temporary Password:</td>
-                        <td class="value"><code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #b91c1c;">{{ $password }}</code></td>
+                        <td class="value"><span class="credential">{{ $password }}</span></td>
                     </tr>
                     @endif
                 </table>
             </div>
 
             <div class="highlight-box">
-                <p><strong>Security Tip:</strong> Please log in to your account and change your password as soon as possible for enhanced security.</p>
+                <p><strong>First login:</strong> Use the credentials above, then change your temporary password immediately. Never share it with anyone.</p>
             </div>
 
             <div class="btn-container">
