@@ -10,7 +10,7 @@ class AdminDocument extends Model
     use HasFactory;
 
     protected $fillable = [
-        'admin_id',
+        'user_id',
         'original_name',
         'file_name',
         'file_path',
@@ -22,8 +22,8 @@ class AdminDocument extends Model
         'size' => 'integer',
     ];
 
-    public function admin()
+    public function user()
     {
-        return $this->belongsTo(Admin::class);
+        return $this->belongsTo(User::class);
     }
 }

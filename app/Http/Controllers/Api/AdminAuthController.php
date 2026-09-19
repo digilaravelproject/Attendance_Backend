@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Mail\SendOtpMail;
-use App\Models\Admin;
 use App\Models\AdminDocument;
 use App\Models\PasswordOtp;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -27,7 +27,7 @@ class AdminAuthController extends Controller
             'company_name' => 'required|string|max:255',
             'owner_name' => 'required|string|max:255',
             'mobile_number' => 'required|string|regex:/^[0-9]{10}$/',
-            'email' => 'required|string|email|max:255|unique:admins,email',
+            'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
         ], [
             'mobile_number.regex' => 'The mobile number must be exactly 10 digits.',
@@ -38,17 +38,18 @@ class AdminAuthController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        $user = Admin::create([
+        $user = User::create([
             'name' => $request->owner_name,
             'company_name' => $request->company_name,
             'owner_name' => $request->owner_name,
             'mobile_number' => $request->mobile_number,
             'email' => strtolower(trim($request->email)),
             'password' => Hash::make($request->password),
+            'role' => 'admin',
         ]);
 
         $token = $user->createToken('admin_auth_token')->plainTextToken;
@@ -76,13 +77,15 @@ class AdminAuthController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        $user = Admin::where('email', strtolower(trim($request->email)))->first();
+        $user = User::where('role', 'admin')
+            ->where('email', strtolower(trim($request->email)))
+            ->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'status' => false,
                 'message' => 'Invalid email address or password.',
@@ -106,7 +109,7 @@ class AdminAuthController extends Controller
     public function forgotPassword(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:admins,email',
+            'email' => 'required|email',
         ], [
             'email.exists' => 'We could not find an account registered with this email address.',
         ]);
@@ -115,12 +118,19 @@ class AdminAuthController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         $email = strtolower(trim($request->email));
-        $user = Admin::where('email', $email)->first();
+        $user = User::where('role', 'admin')->where('email', $email)->first();
+        if (! $user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => ['email' => ['We could not find an administrator registered with this email address.']],
+            ], 422);
+        }
 
         // Generate 6-digit OTP
         $otp = str_pad((string) random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
@@ -139,7 +149,7 @@ class AdminAuthController extends Controller
             Mail::to($email)->send(new SendOtpMail($otp, $user->owner_name ?? $user->name));
         } catch (Throwable $e) {
             // Log mail failure but allow for dev testing if mail transport is unconfigured
-            logger()->error('Failed to send OTP email: ' . $e->getMessage());
+            logger()->error('Failed to send OTP email: '.$e->getMessage());
         }
 
         return response()->json([
@@ -155,7 +165,7 @@ class AdminAuthController extends Controller
     public function resetPassword(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:admins,email',
+            'email' => 'required|email',
             'otp' => 'required|string|size:6',
             'password' => 'required|string|min:6|confirmed',
         ], [
@@ -166,16 +176,24 @@ class AdminAuthController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         $email = strtolower(trim($request->email));
+        $user = User::where('role', 'admin')->where('email', $email)->first();
+        if (! $user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => ['email' => ['We could not find an administrator registered with this email address.']],
+            ], 422);
+        }
         $otpRecord = PasswordOtp::where('email', $email)
             ->where('otp', $request->otp)
             ->first();
 
-        if (!$otpRecord) {
+        if (! $otpRecord) {
             return response()->json([
                 'status' => false,
                 'message' => 'Invalid verification code.',
@@ -184,6 +202,7 @@ class AdminAuthController extends Controller
 
         if ($otpRecord->expires_at->isPast()) {
             $otpRecord->delete();
+
             return response()->json([
                 'status' => false,
                 'message' => 'Verification code has expired. Please request a new code.',
@@ -191,7 +210,6 @@ class AdminAuthController extends Controller
         }
 
         // Update User Password
-        $user = Admin::where('email', $email)->first();
         $user->password = Hash::make($request->password);
         $user->save();
 
@@ -232,7 +250,7 @@ class AdminAuthController extends Controller
             'company_name' => 'sometimes|nullable|string|max:255',
             'mobile_number' => 'sometimes|nullable|string',
             'phone' => 'sometimes|nullable|string',
-            'email' => 'sometimes|required|string|email|max:255|unique:admins,email,' . $user->id,
+            'email' => 'sometimes|required|string|email|max:255|unique:users,email,'.$user->id,
             'department' => 'sometimes|nullable|string|max:255',
             'designation' => 'sometimes|nullable|string|max:255',
             'employee_id' => 'sometimes|nullable|string|max:255',
@@ -250,7 +268,7 @@ class AdminAuthController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -268,14 +286,14 @@ class AdminAuthController extends Controller
 
         if ($request->has('mobile_number')) {
             $user->mobile_number = $request->mobile_number;
-            if (!$request->has('phone')) {
+            if (! $request->has('phone')) {
                 $user->phone = $request->mobile_number;
             }
         }
 
         if ($request->has('phone')) {
             $user->phone = $request->phone;
-            if (!$request->has('mobile_number')) {
+            if (! $request->has('mobile_number')) {
                 $user->mobile_number = $request->phone;
             }
         }
@@ -310,7 +328,7 @@ class AdminAuthController extends Controller
 
         if ($request->hasFile('avatar')) {
             $path = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = asset('storage/' . $path);
+            $user->avatar = asset('storage/'.$path);
         } elseif ($request->has('avatar') && is_string($request->avatar)) {
             $user->avatar = $request->avatar;
         }
@@ -318,7 +336,7 @@ class AdminAuthController extends Controller
         $user->save();
 
         foreach ($request->file('documents', []) as $document) {
-            $path = $document->store('admin-documents/' . $user->id, 'public');
+            $path = $document->store('admin-documents/'.$user->id, 'public');
             $user->documents()->create([
                 'original_name' => $document->getClientOriginalName(),
                 'file_name' => Str::afterLast($path, '/'),
@@ -337,7 +355,7 @@ class AdminAuthController extends Controller
 
     public function deleteDocument(Request $request, string $document): JsonResponse
     {
-        $adminDocument = AdminDocument::where('admin_id', $request->user()->id)->find($document);
+        $adminDocument = AdminDocument::where('user_id', $request->user()->id)->find($document);
 
         if (! $adminDocument) {
             return response()->json([
@@ -375,7 +393,7 @@ class AdminAuthController extends Controller
                 'min:8',
                 'regex:/[A-Z]/',
                 'regex:/[!@#$%&*]/',
-                'confirmed'
+                'confirmed',
             ],
         ], [
             'current_password.required' => 'Please enter your current password.',
@@ -389,11 +407,11 @@ class AdminAuthController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'status' => false,
                 'message' => 'The current password provided is incorrect.',
@@ -422,7 +440,7 @@ class AdminAuthController extends Controller
         ], 200);
     }
 
-    private function profileData(Admin $admin): array
+    private function profileData(User $admin): array
     {
         $data = $admin->toArray();
         $data['documents'] = $admin->documents()
@@ -434,7 +452,7 @@ class AdminAuthController extends Controller
                 'file_name' => $document->file_name,
                 'mime_type' => $document->mime_type,
                 'size' => $document->size,
-                'url' => asset('storage/' . $document->file_path),
+                'url' => asset('storage/'.$document->file_path),
                 'created_at' => $document->created_at,
             ])
             ->values()

@@ -1,0 +1,2755 @@
+{
+    "info": {
+        "_postman_id": "1d891628-cae5-43b0-baca-4af311881fb4",
+        "name": "Attendance",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "48161696"
+    },
+    "item": [
+        {
+            "name": "Admin/Manager",
+            "item": [
+                {
+                    "name": "Authorization",
+                    "item": [
+                        {
+                            "name": "Signup",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"company_name\": \"Acme Solutions\",\n    \"owner_name\": \"Darshan Kondekar\",\n    \"mobile_number\": \"9876543210\",\n    \"email\": \"owner@acmesolutions.com\",\n    \"password\": \"Password@123\",\n    \"password_confirmation\": \"Password@123\"\n  }",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/signup",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "signup"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Signin",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"admin@empmanagement.com\",\n    \"password\": \"admin123\"\n  }",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/login",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "login"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Forgot Password",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"owner@acmesolutions.com\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/forgot-password",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "forgot-password"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Reset Password",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"owner@acmesolutions.com\",\n    \"otp\": \"956769\",\n    \"password\": \"NewSecurePassword@123\",\n    \"password_confirmation\": \"NewSecurePassword@123\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/reset-password",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "reset-password"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Logout",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/logout",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "logout"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "User",
+                    "item": [
+                        {
+                            "name": "User Profile",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <YOUR_ACCESS_TOKEN>"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/profile",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "profile"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Profile",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer YOUR_BEARER_TOKEN"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "formdata",
+                                    "formdata": [
+                                        {
+                                            "type": "text",
+                                            "key": "name",
+                                            "value": "Rahul Sharma"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "email",
+                                            "value": "rahul.sharma@company.com"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "phone",
+                                            "value": "+91 98765 43210"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "department",
+                                            "value": "Design"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "designation",
+                                            "value": "UI/UX Designer"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "employee_id",
+                                            "value": "EMP1025"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "date_of_joining",
+                                            "value": "2024-01-15"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "address",
+                                            "value": "123, Green Park Street, Sector 45, Noida, Uttar Pradesh - 201301"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "status",
+                                            "value": "Active"
+                                        },
+                                        {
+                                            "type": "file",
+                                            "key": "avatar",
+                                            "src": "postman-cloud:///1f11b857-92cb-4750-bbbc-9ebd68da0b9c"
+                                        }
+                                    ]
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/update-profile",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "update-profile"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Password",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer YOUR_BEARER_TOKEN"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"current_password\": \"1NewSecurePassword@123\",\n    \"new_password\": \"Password@123\",\n    \"confirm_password\": \"Password@123\"\n  }",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/update-password",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "update-password"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete doc",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/documents/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "documents",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Role",
+                    "item": [
+                        {
+                            "name": "Create Role",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Senior Backend Developer\",\n    \"department\": \"Engineering\",\n    \"description\": \"Builds and maintains mobile applications\",\n    \"status\": true,\n    \"permission_ids\": [33,34]\n  }",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/roles",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "roles"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get All Roles",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer YOUR_BEARER_TOKEN"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/roles",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "roles"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Search Role",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer YOUR_BEARER_TOKEN"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/roles/search?query=Designer",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "roles",
+                                        "search"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "query",
+                                            "value": "Designer"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Role By ID",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer YOUR_SANCTUM_TOKEN"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/roles/8",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "roles",
+                                        "8"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Role",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Senior Backend Developer\",\n    \"department\": \"Engineering\",\n    \"description\": \"Leads Flutter application development\",\n    \"status\": true,\n    \"permission_ids\": [33,34]\n  }",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/roles/8",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "roles",
+                                        "8"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Role",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer YOUR_BEARER_TOKEN"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/roles/2",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "roles",
+                                        "2"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Permission List",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/permissions",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "permissions"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Designation",
+                    "item": [
+                        {
+                            "name": "Create Designation",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Senior Laravel Developer\",\n    \"hierarchy_level\": \"senior\",\n    \"skills\": [\"Flutter\", \"Dart\", \"Firebase\", \"REST API\"]\n  }",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/designations",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "designations"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Search Designation",
+                            "protocolProfileBehavior": {
+                                "disableBodyPruning": true
+                            },
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer $TOKEN"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "urlencoded",
+                                    "urlencoded": [
+                                        {
+                                            "type": "text",
+                                            "key": "query",
+                                            "value": "Flutter"
+                                        }
+                                    ]
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/designations/search?query=Laravel",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "designations",
+                                        "search"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "query",
+                                            "value": "Laravel"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Designation List",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer $TOKEN"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/designations",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "designations"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Des By ID",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer $TOKEN"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/designations/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "designations",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Designation",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Lead Flutter Developer\",\n    \"hierarchy_level\": \"manager\",\n    \"skills\": [\"Flutter\", \"Dart\", \"Firebase\", \"Team Leadership\"]\n  }",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/designations/2",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "designations",
+                                        "2"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Remove Emp From Des",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer $TOKEN"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/designations/1/employees/2",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "designations",
+                                        "1",
+                                        "employees",
+                                        "2"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Designation",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/designations/2",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "designations",
+                                        "2"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Shift",
+                    "item": [
+                        {
+                            "name": "Create Shift",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Morning Shift\",\n    \"code\": \"MORNING\",\n    \"shift_type\": \"Fixed Shift\",\n    \"status\": true,\n    \"description\": \"Morning working shift for sales and operations team.\",\n    \"start_time\": \"10:00 AM\",\n    \"end_time\": \"07:00 PM\",\n    \"cross_midnight\": false,\n    \"breaks_enabled\": true,\n    \"breaks\": [\n      {\n        \"name\": \"Lunch Break\",\n        \"type\": \"Paid\",\n        \"start_time\": \"01:00 PM\",\n        \"end_time\": \"02:00 PM\"\n      }\n    ],\n    \"grace_period_minutes\": 15,\n    \"late_after_minutes\": 15,\n    \"minimum_working_minutes\": 480,\n    \"early_leaving_allowed\": false,\n    \"auto_mark_late\": true,\n    \"auto_mark_half_day\": true,\n    \"late_threshold_minutes\": 30,\n    \"half_day_after_minutes\": 240,\n    \"overtime_enabled\": true,\n    \"overtime_starts_after_minutes\": 480,\n    \"minimum_overtime_minutes\": 30,\n    \"overtime_calculation\": \"Hourly\",\n    \"overtime_approval_required\": true,\n    \"working_days\": [\n      {\"day\": \"Monday\", \"enabled\": true, \"start_time\": \"10:00\", \"end_time\": \"19:00\"},\n      {\"day\": \"Tuesday\", \"enabled\": true, \"start_time\": \"10:00\", \"end_time\": \"19:00\"},\n      {\"day\": \"Wednesday\", \"enabled\": true, \"start_time\": \"10:00\", \"end_time\": \"19:00\"},\n      {\"day\": \"Thursday\", \"enabled\": true, \"start_time\": \"10:00\", \"end_time\": \"19:00\"},\n      {\"day\": \"Friday\", \"enabled\": true, \"start_time\": \"10:00\", \"end_time\": \"19:00\"},\n      {\"day\": \"Saturday\", \"enabled\": false, \"start_time\": \"10:00\", \"end_time\": \"19:00\"},\n      {\"day\": \"Sunday\", \"enabled\": false, \"start_time\": \"10:00\", \"end_time\": \"19:00\"}\n    ],\n    \"employee_ids\": []\n  }",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/shifts",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "shifts"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Shift List",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{BEARER_TOKEN}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/shifts?status=Active",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "shifts"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "status",
+                                            "value": "Active"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "View Shift by ID",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{BEARER_TOKEN}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/shifts/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "shifts",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Shift",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{BEARER_TOKEN}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Morning Shift\",\n    \"code\": \"MORNING\",\n    \"shift_type\": \"Fixed Shift\",\n    \"status\": true,\n    \"description\": \"Morning working shift for sales and operations team.\",\n    \"start_time\": \"10:00 AM\",\n    \"end_time\": \"07:00 PM\",\n    \"cross_midnight\": false,\n    \"breaks_enabled\": true,\n    \"breaks\": [\n      {\n        \"name\": \"Lunch Break\",\n        \"type\": \"Paid\",\n        \"start_time\": \"01:00 PM\",\n        \"end_time\": \"02:00 PM\"\n      }\n    ],\n    \"grace_period_minutes\": 15,\n    \"late_after_minutes\": 15,\n    \"minimum_working_minutes\": 480,\n    \"early_leaving_allowed\": false,\n    \"auto_mark_late\": true,\n    \"auto_mark_half_day\": true,\n    \"late_threshold_minutes\": 30,\n    \"half_day_after_minutes\": 240,\n    \"overtime_enabled\": true,\n    \"overtime_starts_after_minutes\": 480,\n    \"minimum_overtime_minutes\": 30,\n    \"overtime_calculation\": \"Hourly\",\n    \"overtime_approval_required\": true,\n    \"working_days\": [\n      {\"day\": \"Monday\", \"enabled\": true, \"start_time\": \"10:00\", \"end_time\": \"19:00\"},\n      {\"day\": \"Tuesday\", \"enabled\": true, \"start_time\": \"10:00\", \"end_time\": \"19:00\"},\n      {\"day\": \"Wednesday\", \"enabled\": true, \"start_time\": \"10:00\", \"end_time\": \"19:00\"},\n      {\"day\": \"Thursday\", \"enabled\": true, \"start_time\": \"10:00\", \"end_time\": \"19:00\"},\n      {\"day\": \"Friday\", \"enabled\": true, \"start_time\": \"10:00\", \"end_time\": \"19:00\"},\n      {\"day\": \"Saturday\", \"enabled\": false, \"start_time\": \"10:00\", \"end_time\": \"19:00\"},\n      {\"day\": \"Sunday\", \"enabled\": false, \"start_time\": \"10:00\", \"end_time\": \"19:00\"}\n    ],\n    \"employee_ids\": []\n  }",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/shifts/2",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "shifts",
+                                        "2"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Shift",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{BEARER_TOKEN}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/shifts/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "shifts",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Assign Shift",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"late_threshold_minutes\": 45,\n    \"overtime_enabled\": true,\n    \"employee_ids\": []\n  }",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/shifts/2",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "shifts",
+                                        "2"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "List Assigned Shift",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{BEARER_TOKEN}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/assigned-shifts?date=2025-05-20",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "assigned-shifts"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "date",
+                                            "value": "2025-05-20"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "View Assigned Shift By ID",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{BEARER_TOKEN}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/assigned-shifts/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "assigned-shifts",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Asigned Shift",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{BEARER_TOKEN}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"shift_id\": 2,\n    \"status\": \"Completed\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/assigned-shifts/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "assigned-shifts",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Assigned Shift",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{BEARER_TOKEN}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/assigned-shifts/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "assigned-shifts",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Overview Statistics",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/shifts/overview",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "shifts",
+                                        "overview"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Employee",
+                    "item": [
+                        {
+                            "name": "Add Employee",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "formdata",
+                                    "formdata": [
+                                        {
+                                            "type": "file",
+                                            "key": "avatar",
+                                            "src": "postman-cloud:///1f11b857-92cb-4750-bbbc-9ebd68da0b9c"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "name",
+                                            "value": "Rahul Sharma"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "employee_id",
+                                            "value": "EMP-2026-007"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "gender",
+                                            "value": "Male"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "date_of_birth",
+                                            "value": "1996-05-15"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "marital_status",
+                                            "value": "Single"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "blood_group",
+                                            "value": "O+"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "mobile_number",
+                                            "value": "9876543210"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "alternate_mobile_number",
+                                            "value": "9876500001"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "email",
+                                            "value": "rahul@example.com"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "emergency_contact",
+                                            "value": "9876500000"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "street_address",
+                                            "value": "Flat 402, Sunshine Heights"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "city",
+                                            "value": "Bengaluru"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "postal_code",
+                                            "value": "560038"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "state",
+                                            "value": "Karnataka"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "country",
+                                            "value": "India"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "work_mode",
+                                            "value": "Office"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "employee_type",
+                                            "value": "Full-time"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "department",
+                                            "value": "Engineering"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "designation_id",
+                                            "value": "2"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "team",
+                                            "value": "Team Alpha"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "assigned_shift_id",
+                                            "value": "2"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "date_of_joining",
+                                            "value": "2026-09-17"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "employment_status",
+                                            "value": "Active"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "probation_period",
+                                            "value": "3 Months"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "notice_period",
+                                            "value": "30 Days"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "salary_type",
+                                            "value": "Monthly"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "monthly_base_salary",
+                                            "value": "60000"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "sales_target_enabled",
+                                            "value": "0"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "account_holder_name",
+                                            "value": "Rahul Sharma"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "bank_name",
+                                            "value": "HDFC Bank"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "account_number",
+                                            "value": "50100456789123"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "ifsc_code",
+                                            "value": "HDFC0001234"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "branch_name",
+                                            "value": "Main Branch"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "skills[]",
+                                            "value": "Flutter"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "skills[]",
+                                            "value": "Dart"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "skills[]",
+                                            "value": "Teamwork"
+                                        }
+                                    ]
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/employees",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "employees"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Filter Employee",
+                            "protocolProfileBehavior": {
+                                "disableBodyPruning": true
+                            },
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "urlencoded",
+                                    "urlencoded": [
+                                        {
+                                            "type": "text",
+                                            "key": "department",
+                                            "value": "Engineering"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "key": "employment_status",
+                                            "value": "Active"
+                                        }
+                                    ]
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/employees?department=Engineering&employment_status=Active",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "employees"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "department",
+                                            "value": "Engineering"
+                                        },
+                                        {
+                                            "key": "employment_status",
+                                            "value": "Active"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Search Employee",
+                            "protocolProfileBehavior": {
+                                "disableBodyPruning": true
+                            },
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer $TOKEN"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "urlencoded",
+                                    "urlencoded": [
+                                        {
+                                            "type": "text",
+                                            "key": "query",
+                                            "value": "Rohit"
+                                        }
+                                    ]
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/employees/search?query=Rohit",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "employees",
+                                        "search"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "query",
+                                            "value": "Rohit"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Employee List",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer $TOKEN"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/employees",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "employees"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Emp By ID",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer $TOKEN"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/employees/6",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "employees",
+                                        "6"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Employee",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"employment_status\": \"Probation\",\n    \"probation_period\": \"6 Months\",\n    \"monthly_base_salary\": 65000,\n    \"skills\": [\"Flutter\", \"Dart\", \"Firebase\", \"Teamwork\"]\n  }",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "http://127.0.0.1:8000/api/admin/employees/7",
+                                    "protocol": "http",
+                                    "host": [
+                                        "127",
+                                        "0",
+                                        "0",
+                                        "1"
+                                    ],
+                                    "port": "8000",
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "employees",
+                                        "7"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Employee",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer $TOKEN"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/employees/2",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "employees",
+                                        "2"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Updated Emp Photo",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer <ACCESS_TOKEN>"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "formdata",
+                                    "formdata": [
+                                        {
+                                            "type": "file",
+                                            "key": "avatar",
+                                            "src": "postman-cloud:///1f11b857-92cb-4750-bbbc-9ebd68da0b9c"
+                                        }
+                                    ]
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/employees/7",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "employees",
+                                        "7"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Department",
+                    "item": [
+                        {
+                            "name": "Create Department",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/departments",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "departments"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request POST '{{base_url}}/api/admin/departments' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}' --header 'Content-Type: application/json' --data '{\"name\":\"Engineering\",\"description\":\"Handles all engineering and product development activities.\",\"head_user_id\":1,\"employee_ids\":[1,2,3],\"status\":\"Active\"}'\n```",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Engineering\",\n    \"description\": \"Handles all engineering and product development activities.\",\n    \"head_user_id\": 1,\n    \"employee_ids\": [\n        1,\n        2,\n        3\n    ],\n    \"status\": \"Active\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "if (json.data && json.data.id) pm.collectionVariables.set('department_id', json.data.id);"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Department List",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/departments?status=Active",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "departments"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "status",
+                                            "value": "Active"
+                                        }
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request GET '{{base_url}}/api/admin/departments?status=Active' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Search Department",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/departments/search?query=Engineering",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "departments",
+                                        "search"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "query",
+                                            "value": "Engineering"
+                                        }
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request GET '{{base_url}}/api/admin/departments/search?query=Engineering' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Department By ID",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/departments/{{department_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "departments",
+                                        "{{department_id}}"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request GET '{{base_url}}/api/admin/departments/{{department_id}}' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Department",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/departments/{{department_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "departments",
+                                        "{{department_id}}"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request PATCH '{{base_url}}/api/admin/departments/{{department_id}}' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}' --header 'Content-Type: application/json' --data '{\"name\":\"Product Engineering\",\"description\":\"Handles engineering, platform, and product development.\",\"head_user_id\":1,\"employee_ids\":[1,2,3],\"status\":\"Active\"}'\n```",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Product Engineering\",\n    \"description\": \"Handles engineering, platform, and product development.\",\n    \"head_user_id\": 1,\n    \"employee_ids\": [\n        1,\n        2,\n        3\n    ],\n    \"status\": \"Active\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Add Employees To Department",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/departments/{{department_id}}/employees",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "departments",
+                                        "{{department_id}}",
+                                        "employees"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request POST '{{base_url}}/api/admin/departments/{{department_id}}/employees' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}' --header 'Content-Type: application/json' --data '{\"employee_ids\":[1,2,3]}'\n```",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"employee_ids\": [\n        1,\n        2,\n        3\n    ]\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Remove Employee From Department",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/departments/{{department_id}}/employees/{{employee_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "departments",
+                                        "{{department_id}}",
+                                        "employees",
+                                        "{{employee_id}}"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request DELETE '{{base_url}}/api/admin/departments/{{department_id}}/employees/{{employee_id}}' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Department",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/departments/{{department_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "departments",
+                                        "{{department_id}}"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request DELETE '{{base_url}}/api/admin/departments/{{department_id}}' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Leave",
+                    "item": [
+                        {
+                            "name": "Create Leave Type",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-types",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-types"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request POST '{{base_url}}/api/admin/leave-types' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}' --header 'Content-Type: application/json' --data '{\"name\":\"Casual Leave\",\"code\":\"CL\",\"description\":\"Leave for personal work.\",\"annual_allowance\":12,\"is_paid\":true,\"requires_attachment\":false,\"status\":\"Active\"}'\n```",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Casual Leave\",\n    \"code\": \"CL\",\n    \"description\": \"Leave for personal work.\",\n    \"annual_allowance\": 12,\n    \"is_paid\": true,\n    \"requires_attachment\": false,\n    \"status\": \"Active\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "if (json.data && json.data.id) pm.collectionVariables.set('leave_type_id', json.data.id);"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Leave Type List",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-types?status=Active",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-types"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "status",
+                                            "value": "Active"
+                                        }
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request GET '{{base_url}}/api/admin/leave-types?status=Active' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Leave Type By ID",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-types/{{leave_type_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-types",
+                                        "{{leave_type_id}}"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request GET '{{base_url}}/api/admin/leave-types/{{leave_type_id}}' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Leave Type",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-types/{{leave_type_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-types",
+                                        "{{leave_type_id}}"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request PATCH '{{base_url}}/api/admin/leave-types/{{leave_type_id}}' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}' --header 'Content-Type: application/json' --data '{\"annual_allowance\":15,\"requires_attachment\":false}'\n```",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"annual_allowance\": 15,\n    \"requires_attachment\": false\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Leave Type",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-types/{{leave_type_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-types",
+                                        "{{leave_type_id}}"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request DELETE '{{base_url}}/api/admin/leave-types/{{leave_type_id}}' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create Leave Request",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-requests",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-requests"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request POST '{{base_url}}/api/admin/leave-requests' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}' --header 'Content-Type: application/json' --data '{\"user_id\":1,\"leave_type_id\":\"{{leave_type_id}}\",\"from_date\":\"2026-09-20\",\"to_date\":\"2026-09-22\",\"reason\":\"Personal work at hometown.\",\"contact_during_leave\":\"9876543210\",\"attachment_name\":\"Train_Ticket.pdf\",\"attachment_path\":\"leave-attachments/Train_Ticket.pdf\"}'\n```",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"user_id\": 1,\n    \"leave_type_id\": \"{{leave_type_id}}\",\n    \"from_date\": \"2026-09-20\",\n    \"to_date\": \"2026-09-22\",\n    \"reason\": \"Personal work at hometown.\",\n    \"contact_during_leave\": \"9876543210\",\n    \"attachment_name\": \"Train_Ticket.pdf\",\n    \"attachment_path\": \"leave-attachments/Train_Ticket.pdf\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "if (json.data && json.data.id) pm.collectionVariables.set('leave_request_id', json.data.id);"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Leave Request List",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-requests",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-requests"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request GET '{{base_url}}/api/admin/leave-requests' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Filter Leave Requests",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-requests?status=Pending&date_range=this_month&department_id={{department_id}}&leave_type_id={{leave_type_id}}&search=Rahul",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-requests"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "status",
+                                            "value": "Pending"
+                                        },
+                                        {
+                                            "key": "date_range",
+                                            "value": "this_month"
+                                        },
+                                        {
+                                            "key": "department_id",
+                                            "value": "{{department_id}}"
+                                        },
+                                        {
+                                            "key": "leave_type_id",
+                                            "value": "{{leave_type_id}}"
+                                        },
+                                        {
+                                            "key": "search",
+                                            "value": "Rahul"
+                                        }
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request GET '{{base_url}}/api/admin/leave-requests?status=Pending&date_range=this_month&department_id={{department_id}}&leave_type_id={{leave_type_id}}&search=Rahul' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Leave Request By ID",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-requests/{{leave_request_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-requests",
+                                        "{{leave_request_id}}"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request GET '{{base_url}}/api/admin/leave-requests/{{leave_request_id}}' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Pending Leave Request",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-requests/{{leave_request_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-requests",
+                                        "{{leave_request_id}}"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request PATCH '{{base_url}}/api/admin/leave-requests/{{leave_request_id}}' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}' --header 'Content-Type: application/json' --data '{\"from_date\":\"2026-09-20\",\"to_date\":\"2026-09-23\",\"reason\":\"Updated personal leave reason.\"}'\n```",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"from_date\": \"2026-09-20\",\n    \"to_date\": \"2026-09-23\",\n    \"reason\": \"Updated personal leave reason.\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Approve Leave Request",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-requests/{{leave_request_id}}/approve",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-requests",
+                                        "{{leave_request_id}}",
+                                        "approve"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request POST '{{base_url}}/api/admin/leave-requests/{{leave_request_id}}/approve' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}' --header 'Content-Type: application/json' --data '{\"note\":\"Approved by reporting manager.\"}'\n```",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"note\": \"Approved by reporting manager.\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Reject Leave Request",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-requests/{{leave_request_id}}/reject",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-requests",
+                                        "{{leave_request_id}}",
+                                        "reject"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request POST '{{base_url}}/api/admin/leave-requests/{{leave_request_id}}/reject' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}' --header 'Content-Type: application/json' --data '{\"note\":\"Insufficient supporting information.\"}'\n```",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"note\": \"Insufficient supporting information.\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Leave Calendar",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-requests/calendar?month=2026-09&department_id={{department_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-requests",
+                                        "calendar"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "month",
+                                            "value": "2026-09"
+                                        },
+                                        {
+                                            "key": "department_id",
+                                            "value": "{{department_id}}"
+                                        }
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request GET '{{base_url}}/api/admin/leave-requests/calendar?month=2026-09&department_id={{department_id}}' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Leave Reports",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-requests/reports?from_date=2026-01-01&to_date=2026-12-31",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-requests",
+                                        "reports"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "from_date",
+                                            "value": "2026-01-01"
+                                        },
+                                        {
+                                            "key": "to_date",
+                                            "value": "2026-12-31"
+                                        }
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request GET '{{base_url}}/api/admin/leave-requests/reports?from_date=2026-01-01&to_date=2026-12-31' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Leave Request",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{auth_secret_06hf}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/leave-requests/{{leave_request_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "leave-requests",
+                                        "{{leave_request_id}}"
+                                    ]
+                                },
+                                "description": "cURL:\n```bash\ncurl --request DELETE '{{base_url}}/api/admin/leave-requests/{{leave_request_id}}' --header 'Accept: application/json' --header 'Authorization: Bearer {{auth_secret_06hf}}'\n```"
+                            },
+                            "response": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Employee",
+            "item": []
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{auth_secret_06hf}}",
+                "type": "string"
+            }
+        ]
+    },
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "packages": [],
+                "requests": [],
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "packages": [],
+                "requests": [],
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url_live",
+            "value": ""
+        },
+        {
+            "key": "auth_secret_0s92",
+            "secret": true
+        },
+        {
+            "key": "auth_secret_0tj4",
+            "secret": true
+        },
+        {
+            "key": "auth_secret_18fm",
+            "secret": true
+        },
+        {
+            "key": "auth_secret_0g97",
+            "secret": true
+        },
+        {
+            "key": "base_url",
+            "value": ""
+        },
+        {
+            "key": "auth_secret_117f",
+            "secret": true
+        },
+        {
+            "key": "auth_secret_06hf",
+            "secret": true
+        },
+        {
+            "key": "department_id",
+            "value": ""
+        },
+        {
+            "key": "employee_id",
+            "value": ""
+        },
+        {
+            "key": "leave_type_id",
+            "value": ""
+        },
+        {
+            "key": "leave_request_id",
+            "value": ""
+        }
+    ]
+}

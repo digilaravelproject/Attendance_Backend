@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Admin;
 use App\Models\Permission;
+use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -12,16 +12,17 @@ class RolePermissionApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Admin $admin;
+    private User $admin;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(PermissionSeeder::class);
-        $this->admin = Admin::create([
+        $this->admin = User::create([
             'name' => 'Test Admin',
             'email' => 'admin@example.com',
             'password' => bcrypt('password'),
+            'role' => 'admin',
         ]);
     }
 

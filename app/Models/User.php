@@ -30,6 +30,8 @@ class User extends Authenticatable
         'password',
         'role',
         'department',
+        'department_id',
+        'team',
         'designation',
         'designation_id',
         'employee_id',
@@ -78,5 +80,20 @@ class User extends Authenticatable
     public function designationDetails()
     {
         return $this->belongsTo(Designation::class, 'designation_id');
+    }
+
+    public function departmentDetails()
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    public function leaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(AdminDocument::class);
     }
 }

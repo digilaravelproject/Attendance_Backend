@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Admin;
 use App\Models\PasswordOtp;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +13,7 @@ class AdminAuthApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_signup_and_login_use_the_admins_table(): void
+    public function test_signup_and_login_use_the_users_table_with_admin_role(): void
     {
         $payload = [
             'company_name' => 'Acme Corporation',
@@ -29,8 +29,8 @@ class AdminAuthApiTest extends TestCase
             ->assertJsonPath('data.email', 'john@acme.com')
             ->assertJsonStructure(['access_token']);
 
-        $this->assertDatabaseHas('admins', ['email' => 'john@acme.com']);
-        $this->assertDatabaseMissing('users', ['email' => 'john@acme.com']);
+        $this->assertDatabaseHas('users', ['email' => 'john@acme.com', 'role' => 'admin']);
+        $this->assertFalse(\Schema::hasTable('admins'));
 
         $this->postJson('/api/admin/signup', $payload)->assertUnprocessable();
         $this->postJson('/api/admin/login', [
@@ -91,15 +91,16 @@ class AdminAuthApiTest extends TestCase
         $this->getJson('/api/admin/profile')->assertUnauthorized();
     }
 
-    private function admin(): Admin
+    private function admin(): User
     {
-        return Admin::create([
+        return User::create([
             'name' => 'Test Admin',
             'company_name' => 'Test Company',
             'owner_name' => 'Test Admin',
             'mobile_number' => '9876543210',
             'email' => 'admin@example.com',
             'password' => bcrypt('password123'),
+            'role' => 'admin',
         ]);
     }
 }

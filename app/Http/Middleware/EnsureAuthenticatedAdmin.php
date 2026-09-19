@@ -2,8 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Http\Controllers\Api\AdminAuthController;
-use App\Models\Admin;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\JsonResponse;
@@ -15,14 +13,8 @@ class EnsureAuthenticatedAdmin
     public function handle(Request $request, Closure $next): Response|JsonResponse
     {
         $user = $request->user();
-        $usesAdminAccount = str_starts_with(
-            (string) $request->route()?->getActionName(),
-            AdminAuthController::class
-        );
-        $isAdmin = $user instanceof Admin
-            || ($user instanceof User
-                && strtolower((string) $user->role) === 'admin'
-                && ! $usesAdminAccount);
+        $isAdmin = $user instanceof User
+            && strtolower((string) $user->role) === 'admin';
 
         if (! $isAdmin) {
             return response()->json([

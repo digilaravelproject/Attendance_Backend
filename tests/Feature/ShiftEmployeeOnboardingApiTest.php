@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Mail\WelcomeEmployeeMail;
-use App\Models\Admin;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
@@ -14,15 +14,16 @@ class ShiftEmployeeOnboardingApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Admin $admin;
+    private User $admin;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->admin = Admin::create([
+        $this->admin = User::create([
             'name' => 'Administrator',
             'email' => 'admin@example.com',
             'password' => bcrypt('password'),
+            'role' => 'admin',
         ]);
     }
 

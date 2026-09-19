@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Mail\WelcomeEmployeeMail;
+use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Shift;
 use App\Models\User;
@@ -15,7 +16,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class EmployeeManagementController extends Controller
@@ -74,10 +74,13 @@ class EmployeeManagementController extends Controller
 
         $data = $validator->validated();
         $designation = Designation::findOrFail($data['designation_id']);
-        $plainPassword = $data['password'] ?? ('Emp@' . random_int(100000, 999999));
+        if (! empty($data['department_id'])) {
+            $data['department'] = Department::findOrFail($data['department_id'])->name;
+        }
+        $plainPassword = $data['password'] ?? ('Emp@'.random_int(100000, 999999));
         $avatarUrl = $this->storeAvatar($request);
 
-        $employee = new User();
+        $employee = new User;
         $employee->forceFill([
             ...Arr::except($data, ['password', 'designation_id', 'avatar', 'monthly_base_salary']),
             'name' => trim($data['name']),
@@ -99,7 +102,7 @@ class EmployeeManagementController extends Controller
             Mail::to($employee->email)->send(new WelcomeEmployeeMail($employee->fresh(), $plainPassword));
         } catch (\Throwable $exception) {
             $emailSent = false;
-            Log::error('Failed sending welcome email to employee: ' . $exception->getMessage());
+            Log::error('Failed sending welcome email to employee: '.$exception->getMessage());
         }
 
         return response()->json([
@@ -151,6 +154,11 @@ class EmployeeManagementController extends Controller
         }
         if (isset($data['designation_id'])) {
             $data['designation'] = Designation::findOrFail($data['designation_id'])->name;
+        }
+        if (array_key_exists('department_id', $data)) {
+            $data['department'] = $data['department_id']
+                ? Department::findOrFail($data['department_id'])->name
+                : null;
         }
         if (isset($data['employment_status'])) {
             $data['status'] = $this->accountStatus($data['employment_status']);
@@ -208,6 +216,7 @@ class EmployeeManagementController extends Controller
             'work_mode' => ['sometimes', Rule::in(['Office', 'Remote', 'Hybrid'])],
             'employee_type' => ['sometimes', Rule::in(['Full-time', 'Part-time', 'Contract', 'Freelancer', 'Intern'])],
             'department' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'department_id' => ['sometimes', 'nullable', 'integer', 'exists:departments,id'],
             'designation_id' => [$presence, 'integer', 'exists:designations,id'],
             'team' => ['sometimes', 'nullable', 'string', 'max:255'],
             'assigned_shift_id' => ['sometimes', 'nullable', 'integer', 'exists:shifts,id'],
@@ -299,7 +308,7 @@ class EmployeeManagementController extends Controller
             'id', 'designation_id', 'assigned_shift_id', 'reporting_manager_id', 'employee_id',
             'name', 'email', 'role', 'gender', 'date_of_birth', 'marital_status', 'blood_group',
             'mobile_number', 'alternate_mobile_number', 'phone', 'emergency_contact', 'address',
-            'street_address', 'city', 'postal_code', 'state', 'country', 'department', 'work_mode',
+            'street_address', 'city', 'postal_code', 'state', 'country', 'department', 'department_id', 'work_mode',
             'employee_type', 'team', 'designation', 'monthly_salary', 'salary_type',
             'sales_target_enabled', 'sales_target', 'date_of_joining', 'employment_status',
             'probation_period', 'notice_period', 'skills', 'account_holder_name', 'bank_name',

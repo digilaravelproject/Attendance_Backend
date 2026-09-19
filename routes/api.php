@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\AssignedShiftController;
+use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\DesignationManagementController;
 use App\Http\Controllers\Api\EmployeeManagementController;
+use App\Http\Controllers\Api\LeaveManagementController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ShiftManagementController;
@@ -41,6 +43,16 @@ Route::prefix('admin')->group(function () {
         Route::match(['put', 'patch'], '/designations/{id}', [DesignationManagementController::class, 'update']);
         Route::delete('/designations/{id}', [DesignationManagementController::class, 'destroy']);
         Route::delete('/designations/{id}/employees/{employeeId}', [DesignationManagementController::class, 'removeEmployee']);
+
+        // Departments
+        Route::get('/departments/search', [DepartmentController::class, 'search']);
+        Route::get('/departments', [DepartmentController::class, 'index']);
+        Route::post('/departments', [DepartmentController::class, 'store']);
+        Route::get('/departments/{id}', [DepartmentController::class, 'show']);
+        Route::match(['put', 'patch'], '/departments/{id}', [DepartmentController::class, 'update']);
+        Route::post('/departments/{id}/employees', [DepartmentController::class, 'addEmployees']);
+        Route::delete('/departments/{id}/employees/{employeeId}', [DepartmentController::class, 'removeEmployee']);
+        Route::delete('/departments/{id}', [DepartmentController::class, 'destroy']);
 
         // Employees (stored in users with role=employee)
         Route::get('/employees/search', [EmployeeManagementController::class, 'search']);
@@ -101,6 +113,23 @@ Route::prefix('admin')->group(function () {
         Route::post('/shift-rotations/{id}/remove-user', [ShiftRotationController::class, 'removeUser']);
         Route::delete('/shift-rotations/{id}/remove-user', [ShiftRotationController::class, 'removeUser']);
         Route::delete('/shift-rotations/{id}', [ShiftRotationController::class, 'destroy']);
+
+        // Leave request management, calendar, reports, and leave types
+        Route::get('/leave-requests/calendar', [LeaveManagementController::class, 'calendar']);
+        Route::get('/leave-requests/reports', [LeaveManagementController::class, 'reports']);
+        Route::get('/leave-requests', [LeaveManagementController::class, 'index']);
+        Route::post('/leave-requests', [LeaveManagementController::class, 'store']);
+        Route::get('/leave-requests/{id}', [LeaveManagementController::class, 'show']);
+        Route::match(['put', 'patch'], '/leave-requests/{id}', [LeaveManagementController::class, 'update']);
+        Route::post('/leave-requests/{id}/approve', [LeaveManagementController::class, 'approve']);
+        Route::post('/leave-requests/{id}/reject', [LeaveManagementController::class, 'reject']);
+        Route::delete('/leave-requests/{id}', [LeaveManagementController::class, 'destroy']);
+
+        Route::get('/leave-types', [LeaveManagementController::class, 'leaveTypes']);
+        Route::post('/leave-types', [LeaveManagementController::class, 'storeLeaveType']);
+        Route::get('/leave-types/{id}', [LeaveManagementController::class, 'showLeaveType']);
+        Route::match(['put', 'patch'], '/leave-types/{id}', [LeaveManagementController::class, 'updateLeaveType']);
+        Route::delete('/leave-types/{id}', [LeaveManagementController::class, 'destroyLeaveType']);
 
         // Auth
         Route::post('/logout', [AdminAuthController::class, 'logout']);
