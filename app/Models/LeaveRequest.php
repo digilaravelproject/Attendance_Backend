@@ -12,7 +12,8 @@ class LeaveRequest extends Model
     protected $fillable = [
         'user_id', 'leave_type_id', 'from_date', 'to_date', 'total_days', 'reason',
         'contact_during_leave', 'attachment_name', 'attachment_path', 'status',
-        'review_note', 'reviewed_by_user_id', 'reviewed_at',
+        'review_note', 'reviewed_by_user_id', 'reviewed_at', 'assigned_to_user_id',
+        'session', 'address_during_leave',
     ];
 
     protected function casts(): array
@@ -38,6 +39,11 @@ class LeaveRequest extends Model
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by_user_id');
+    }
+
+    public function assignee()
+    {
+        return $this->belongsTo(User::class, 'assigned_to_user_id');
     }
 
     public function actions()

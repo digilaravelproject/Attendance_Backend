@@ -74,6 +74,7 @@ class EmployeeManagementController extends Controller
         }
 
         $data = $validator->validated();
+        $this->normalizeSalesTarget($data);
         $designation = Designation::findOrFail($data['designation_id']);
         if (! empty($data['department_id'])) {
             $data['department'] = Department::findOrFail($data['department_id'])->name;
@@ -148,6 +149,7 @@ class EmployeeManagementController extends Controller
         }
 
         $data = $validator->validated();
+        $this->normalizeSalesTarget($data);
         if (isset($data['email'])) {
             $data['email'] = strtolower(trim($data['email']));
         }
@@ -241,7 +243,10 @@ class EmployeeManagementController extends Controller
             'monthly_salary' => [$presence, 'numeric', 'min:0', 'max:9999999999.99'],
             'monthly_base_salary' => ['sometimes', 'numeric', 'min:0', 'max:9999999999.99'],
             'sales_target_enabled' => ['sometimes', 'boolean'],
-            'sales_target' => ['nullable', 'required_if:sales_target_enabled,true', 'numeric', 'min:0'],
+            'sales_target_metric_type' => [Rule::requiredIf(fn () => $request->boolean('sales_target_enabled', (bool) ($employee?->sales_target_enabled ?? false))), 'nullable', Rule::in(['Revenue', 'Deals Closed', 'Units Sold'])],
+            'sales_target' => [Rule::requiredIf(fn () => $request->boolean('sales_target_enabled', (bool) ($employee?->sales_target_enabled ?? false))), 'nullable', 'numeric', 'min:0'],
+            'sales_target_period' => [Rule::requiredIf(fn () => $request->boolean('sales_target_enabled', (bool) ($employee?->sales_target_enabled ?? false))), 'nullable', Rule::in(['Weekly', 'Monthly', 'Quarterly', 'Yearly'])],
+            'incentive_commission_percent' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
             'account_holder_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'bank_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'account_number' => ['sometimes', 'nullable', 'string', 'max:50'],
@@ -274,6 +279,16 @@ class EmployeeManagementController extends Controller
             $updates['ifsc_code'] = strtoupper($request->input('ifsc_code'));
         }
         $request->merge($updates);
+    }
+
+    private function normalizeSalesTarget(array &$data): void
+    {
+        if (array_key_exists('sales_target_enabled', $data) && ! (bool) $data['sales_target_enabled']) {
+            $data['sales_target_metric_type'] = null;
+            $data['sales_target'] = null;
+            $data['sales_target_period'] = null;
+            $data['incentive_commission_percent'] = null;
+        }
     }
 
     private function storeAvatar(Request $request): ?string
@@ -323,7 +338,8 @@ class EmployeeManagementController extends Controller
             'mobile_number', 'alternate_mobile_number', 'phone', 'emergency_contact', 'address',
             'street_address', 'city', 'postal_code', 'state', 'country', 'department', 'department_id', 'work_mode',
             'employee_type', 'team', 'designation', 'monthly_salary', 'salary_type',
-            'sales_target_enabled', 'sales_target', 'date_of_joining', 'employment_status',
+            'sales_target_enabled', 'sales_target', 'sales_target_metric_type',
+            'sales_target_period', 'incentive_commission_percent', 'date_of_joining', 'employment_status',
             'probation_period', 'notice_period', 'skills', 'account_holder_name', 'bank_name',
             'account_number', 'ifsc_code', 'branch_name', 'avatar', 'status', 'created_at', 'updated_at',
         ];

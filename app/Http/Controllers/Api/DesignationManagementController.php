@@ -56,7 +56,7 @@ class DesignationManagementController extends Controller
         }
 
         $designation = DB::transaction(function () use ($request) {
-            $designation = new Designation();
+            $designation = new Designation;
             $designation->name = trim($request->input('name'));
             $designation->hierarchy_level = strtolower($request->input('hierarchy_level'));
             $designation->skills = json_encode(array_values($request->input('skills', [])));
@@ -177,6 +177,38 @@ class DesignationManagementController extends Controller
         return response()->json([
             'status' => true,
             'message' => "Employee '{$employee->name}' removed from designation '{$designation->name}' successfully.",
+            'data' => $this->load($designation),
+        ]);
+    }
+
+    public function assignEmployees(Request $request, string $id): JsonResponse
+    {
+        $designation = Designation::find($id);
+        if (! $designation) {
+            return response()->json(['status' => false, 'message' => 'Designation not found.'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'employee_id' => ['required_without:employee_ids', 'integer', Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'employee'))],
+            'employee_ids' => ['required_without:employee_id', 'array', 'min:1'],
+            'employee_ids.*' => ['required', 'integer', 'distinct',
+                Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'employee'))],
+        ]);
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors()->toArray());
+        }
+
+        $ids = $request->filled('employee_id')
+            ? [(int) $request->input('employee_id')]
+            : $validator->validated()['employee_ids'];
+        User::whereIn('id', $ids)->where('role', 'employee')->update([
+            'designation_id' => $designation->id,
+            'designation' => $designation->name,
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Employees assigned to designation successfully.',
             'data' => $this->load($designation),
         ]);
     }

@@ -66,6 +66,9 @@ class User extends Authenticatable
             'date_of_joining' => 'date:Y-m-d',
             'date_of_birth' => 'date:Y-m-d',
             'monthly_salary' => 'decimal:2',
+            'sales_target_enabled' => 'boolean',
+            'sales_target' => 'decimal:2',
+            'incentive_commission_percent' => 'decimal:2',
             'skills' => 'array',
         ];
     }

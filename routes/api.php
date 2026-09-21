@@ -35,6 +35,16 @@ Route::prefix('admin')->group(function () {
         Route::put('/update-password', [AdminAuthController::class, 'updatePassword']);
         Route::delete('/documents/{document}', [AdminAuthController::class, 'deleteDocument']);
         Route::post('/logout', [AdminAuthController::class, 'logout']);
+
+        Route::get('/leave-approvers', [LeaveManagementController::class, 'approvers']);
+        Route::get('/leave-requests/calendar', [LeaveManagementController::class, 'calendar']);
+        Route::get('/leave-requests', [LeaveManagementController::class, 'index']);
+        Route::post('/leave-requests', [LeaveManagementController::class, 'store']);
+        Route::get('/leave-requests/{id}', [LeaveManagementController::class, 'show'])->whereNumber('id');
+        Route::post('/leave-requests/{id}/approve', [LeaveManagementController::class, 'approve'])->whereNumber('id');
+        Route::post('/leave-requests/{id}/reject', [LeaveManagementController::class, 'reject'])->whereNumber('id');
+        Route::get('/leave-types', [LeaveManagementController::class, 'leaveTypes']);
+        Route::get('/holidays', [LeaveManagementController::class, 'holidays']);
     });
 
     // Employee panel routes use the same /api/admin authorization endpoints and token.
@@ -55,6 +65,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/designations', [DesignationManagementController::class, 'index']);
         Route::post('/designations', [DesignationManagementController::class, 'store']);
         Route::get('/designations/{id}', [DesignationManagementController::class, 'show']);
+        Route::post('/designations/{id}/employees', [DesignationManagementController::class, 'assignEmployees']);
         Route::match(['put', 'patch'], '/designations/{id}', [DesignationManagementController::class, 'update']);
         Route::delete('/designations/{id}', [DesignationManagementController::class, 'destroy']);
         Route::delete('/designations/{id}/employees/{employeeId}', [DesignationManagementController::class, 'removeEmployee']);
@@ -130,21 +141,15 @@ Route::prefix('admin')->group(function () {
         Route::delete('/shift-rotations/{id}', [ShiftRotationController::class, 'destroy']);
 
         // Leave request management, calendar, reports, and leave types
-        Route::get('/leave-requests/calendar', [LeaveManagementController::class, 'calendar']);
         Route::get('/leave-requests/reports', [LeaveManagementController::class, 'reports']);
-        Route::get('/leave-requests', [LeaveManagementController::class, 'index']);
-        Route::post('/leave-requests', [LeaveManagementController::class, 'store']);
-        Route::get('/leave-requests/{id}', [LeaveManagementController::class, 'show']);
         Route::match(['put', 'patch'], '/leave-requests/{id}', [LeaveManagementController::class, 'update']);
-        Route::post('/leave-requests/{id}/approve', [LeaveManagementController::class, 'approve']);
-        Route::post('/leave-requests/{id}/reject', [LeaveManagementController::class, 'reject']);
         Route::delete('/leave-requests/{id}', [LeaveManagementController::class, 'destroy']);
 
-        Route::get('/leave-types', [LeaveManagementController::class, 'leaveTypes']);
         Route::post('/leave-types', [LeaveManagementController::class, 'storeLeaveType']);
         Route::get('/leave-types/{id}', [LeaveManagementController::class, 'showLeaveType']);
         Route::match(['put', 'patch'], '/leave-types/{id}', [LeaveManagementController::class, 'updateLeaveType']);
         Route::delete('/leave-types/{id}', [LeaveManagementController::class, 'destroyLeaveType']);
+        Route::post('/holidays', [LeaveManagementController::class, 'storeHoliday']);
 
     });
 });
