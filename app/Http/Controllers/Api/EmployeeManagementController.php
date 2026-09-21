@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class EmployeeManagementController extends Controller
@@ -77,12 +78,12 @@ class EmployeeManagementController extends Controller
         if (! empty($data['department_id'])) {
             $data['department'] = Department::findOrFail($data['department_id'])->name;
         }
-        $plainPassword = $data['password'] ?? ('Emp@'.random_int(100000, 999999));
+        $plainPassword = $this->generatedPassword($data['name']);
         $avatarUrl = $this->storeAvatar($request);
 
         $employee = new User;
         $employee->forceFill([
-            ...Arr::except($data, ['password', 'designation_id', 'avatar', 'monthly_base_salary']),
+            ...Arr::except($data, ['password', 'designation_id', 'avatar', 'monthly_base_salary', 'role_ids']),
             'name' => trim($data['name']),
             'email' => strtolower(trim($data['email'])),
             'password' => Hash::make($plainPassword),
@@ -96,6 +97,10 @@ class EmployeeManagementController extends Controller
             'sales_target_enabled' => (bool) ($data['sales_target_enabled'] ?? false),
         ]);
         $employee->save();
+
+        if (array_key_exists('role_ids', $data)) {
+            $employee->roles()->sync($data['role_ids']);
+        }
 
         $emailSent = true;
         try {
@@ -164,6 +169,9 @@ class EmployeeManagementController extends Controller
             $data['status'] = $this->accountStatus($data['employment_status']);
         }
 
+        $roleIds = $data['role_ids'] ?? null;
+        unset($data['role_ids']);
+
         $avatarUrl = $this->storeAvatar($request);
         if ($avatarUrl) {
             $data['avatar'] = $avatarUrl;
@@ -171,6 +179,9 @@ class EmployeeManagementController extends Controller
         unset($data['monthly_base_salary']);
 
         $employee->forceFill($data)->save();
+        if ($roleIds !== null) {
+            $employee->roles()->sync($roleIds);
+        }
 
         return response()->json([
             'status' => true,
@@ -242,6 +253,8 @@ class EmployeeManagementController extends Controller
                 ? ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120']
                 : ['sometimes', 'nullable', 'url', 'max:2048'],
             'password' => ['sometimes', 'nullable', 'string', 'min:8'],
+            'role_ids' => ['sometimes', 'array'],
+            'role_ids.*' => ['integer', 'distinct', Rule::exists('roles', 'id')->where('status', true)],
         ];
     }
 
@@ -319,6 +332,13 @@ class EmployeeManagementController extends Controller
     private function reload(User $employee): User
     {
         return User::query()->select($this->columns())->findOrFail($employee->id);
+    }
+
+    private function generatedPassword(string $name): string
+    {
+        $normalizedName = preg_replace('/[^a-z0-9]/', '', strtolower(Str::ascii($name))) ?: 'employee';
+
+        return $normalizedName.'@123';
     }
 
     private function accountStatus(string $employmentStatus): string

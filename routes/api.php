@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\AssignedShiftController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\DesignationManagementController;
+use App\Http\Controllers\Api\EmployeeAttendanceController;
 use App\Http\Controllers\Api\EmployeeManagementController;
 use App\Http\Controllers\Api\LeaveManagementController;
 use App\Http\Controllers\Api\PermissionController;
@@ -25,16 +26,30 @@ Route::prefix('admin')->group(function () {
     Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
 
-    // Protected routes (Sanctum Auth Token Required)
-    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
-        // Profile routes
+    // Shared authenticated routes for administrators and employees.
+    Route::middleware('auth:sanctum')->group(function () {
         Route::get('/profile', [AdminAuthController::class, 'getProfile']);
         Route::put('/profile', [AdminAuthController::class, 'updateProfile']);
         Route::post('/update-profile', [AdminAuthController::class, 'updateProfile']);
-        Route::delete('/documents/{document}', [AdminAuthController::class, 'deleteDocument']);
         Route::post('/update-password', [AdminAuthController::class, 'updatePassword']);
         Route::put('/update-password', [AdminAuthController::class, 'updatePassword']);
+        Route::delete('/documents/{document}', [AdminAuthController::class, 'deleteDocument']);
+        Route::post('/logout', [AdminAuthController::class, 'logout']);
+    });
 
+    // Employee panel routes use the same /api/admin authorization endpoints and token.
+    Route::middleware(['auth:sanctum', 'employee'])->group(function () {
+        Route::post('/attendance/check-in', [EmployeeAttendanceController::class, 'checkIn']);
+        Route::post('/attendance/check-out', [EmployeeAttendanceController::class, 'checkOut']);
+        Route::post('/attendance/mark', [EmployeeAttendanceController::class, 'checkIn']);
+        Route::post('/attendance/mark-logout', [EmployeeAttendanceController::class, 'checkOut']);
+        Route::get('/dashboard', [EmployeeAttendanceController::class, 'dashboard']);
+        Route::get('/birthdays/upcoming', [EmployeeAttendanceController::class, 'upcomingBirthdays']);
+        Route::get('/attendance/history', [EmployeeAttendanceController::class, 'history']);
+    });
+
+    // Protected routes (Sanctum Auth Token Required)
+    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
         // Designations
         Route::get('/designations/search', [DesignationManagementController::class, 'search']);
         Route::get('/designations', [DesignationManagementController::class, 'index']);
@@ -131,7 +146,5 @@ Route::prefix('admin')->group(function () {
         Route::match(['put', 'patch'], '/leave-types/{id}', [LeaveManagementController::class, 'updateLeaveType']);
         Route::delete('/leave-types/{id}', [LeaveManagementController::class, 'destroyLeaveType']);
 
-        // Auth
-        Route::post('/logout', [AdminAuthController::class, 'logout']);
     });
 });

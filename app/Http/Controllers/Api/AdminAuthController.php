@@ -64,7 +64,7 @@ class AdminAuthController extends Controller
     }
 
     /**
-     * Admin/Manager Login
+     * Shared administrator/employee login.
      */
     public function login(Request $request): JsonResponse
     {
@@ -81,8 +81,7 @@ class AdminAuthController extends Controller
             ], 422);
         }
 
-        $user = User::where('role', 'admin')
-            ->where('email', strtolower(trim($request->email)))
+        $user = User::where('email', strtolower(trim($request->email)))
             ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
@@ -92,7 +91,14 @@ class AdminAuthController extends Controller
             ], 401);
         }
 
-        $token = $user->createToken('admin_auth_token')->plainTextToken;
+        if ($user->role === 'employee' && strtolower((string) $user->status) === 'inactive') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Your employee account is inactive. Please contact an administrator.',
+            ], 403);
+        }
+
+        $token = $user->createToken($user->role.'_auth_token')->plainTextToken;
 
         return response()->json([
             'status' => true,
@@ -123,12 +129,12 @@ class AdminAuthController extends Controller
         }
 
         $email = strtolower(trim($request->email));
-        $user = User::where('role', 'admin')->where('email', $email)->first();
+        $user = User::where('email', $email)->first();
         if (! $user) {
             return response()->json([
                 'status' => false,
                 'message' => 'Validation error',
-                'errors' => ['email' => ['We could not find an administrator registered with this email address.']],
+                'errors' => ['email' => ['We could not find an account registered with this email address.']],
             ], 422);
         }
 
@@ -181,12 +187,12 @@ class AdminAuthController extends Controller
         }
 
         $email = strtolower(trim($request->email));
-        $user = User::where('role', 'admin')->where('email', $email)->first();
+        $user = User::where('email', $email)->first();
         if (! $user) {
             return response()->json([
                 'status' => false,
                 'message' => 'Validation error',
-                'errors' => ['email' => ['We could not find an administrator registered with this email address.']],
+                'errors' => ['email' => ['We could not find an account registered with this email address.']],
             ], 422);
         }
         $otpRecord = PasswordOtp::where('email', $email)
@@ -428,7 +434,7 @@ class AdminAuthController extends Controller
     }
 
     /**
-     * Logout Admin/Manager
+     * Logout the currently authenticated administrator or employee.
      */
     public function logout(Request $request): JsonResponse
     {
@@ -440,10 +446,38 @@ class AdminAuthController extends Controller
         ], 200);
     }
 
-    private function profileData(User $admin): array
+    private function profileData(User $user): array
     {
-        $data = $admin->toArray();
-        $data['documents'] = $admin->documents()
+        $user->load([
+            'designationDetails',
+            'departmentDetails',
+            'assignedShift',
+            'roles' => fn ($query) => $query->with('permissions')->where('status', true),
+        ]);
+
+        $data = $user->toArray();
+        $permissions = $user->roles
+            ->flatMap->permissions
+            ->unique('id')
+            ->sortBy([['module', 'asc'], ['name', 'asc']])
+            ->values();
+        $data['permission_ids'] = $permissions->pluck('id')->all();
+        $data['permissions'] = $permissions->map(fn ($permission) => [
+            'id' => $permission->id,
+            'module' => $permission->module,
+            'module_slug' => $permission->module_slug,
+            'name' => $permission->name,
+            'action' => $permission->action,
+            'description' => $permission->description,
+        ])->all();
+        $data['permissions_by_module'] = $permissions
+            ->groupBy('module_slug')
+            ->map(fn ($items, $slug) => [
+                'module' => $items->first()->module,
+                'module_slug' => $slug,
+                'permissions' => $items->pluck('action')->values()->all(),
+            ])->values()->all();
+        $data['documents'] = $user->documents()
             ->latest()
             ->get()
             ->map(fn (AdminDocument $document) => [

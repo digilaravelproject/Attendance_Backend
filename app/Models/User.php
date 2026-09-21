@@ -64,6 +64,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'date_of_joining' => 'date:Y-m-d',
+            'date_of_birth' => 'date:Y-m-d',
             'monthly_salary' => 'decimal:2',
             'skills' => 'array',
         ];
@@ -95,5 +96,15 @@ class User extends Authenticatable
     public function documents()
     {
         return $this->hasMany(AdminDocument::class);
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    public function assignedShift()
+    {
+        return $this->belongsTo(Shift::class, 'assigned_shift_id');
     }
 }
