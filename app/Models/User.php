@@ -110,4 +110,14 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Shift::class, 'assigned_shift_id');
     }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'recipient_id');
+    }
+
+    public function performedNotifications()
+    {
+        return $this->hasMany(Notification::class, 'actor_id');
+    }
 }

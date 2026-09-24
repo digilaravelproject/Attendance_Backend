@@ -162,12 +162,14 @@ class EmployeePortalApiTest extends TestCase
             ->assertJsonPath('data.recent_records.0.date', '2026-09-21');
     }
 
-    public function test_admin_token_cannot_access_employee_routes(): void
+    public function test_admin_receives_admin_dashboard_from_shared_dashboard_route(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)->getJson('/api/admin/dashboard')
-            ->assertForbidden();
+            ->assertOk()
+            ->assertJsonPath('message', 'Admin dashboard retrieved successfully.')
+            ->assertJsonStructure(['data' => ['todays_summary', 'current_shift', 'recent_activities']]);
     }
 
     public function test_employee_can_use_shared_profile_password_and_document_endpoints(): void

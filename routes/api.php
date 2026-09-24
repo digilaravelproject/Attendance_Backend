@@ -1,12 +1,14 @@
 <?php
 
 use App\Http\Controllers\Api\AdminAuthController;
+use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AssignedShiftController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\DesignationManagementController;
 use App\Http\Controllers\Api\EmployeeAttendanceController;
 use App\Http\Controllers\Api\EmployeeManagementController;
 use App\Http\Controllers\Api\LeaveManagementController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ShiftManagementController;
@@ -27,7 +29,7 @@ Route::prefix('admin')->group(function () {
     Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
 
     // Shared authenticated routes for administrators and employees.
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'track.admin.action'])->group(function () {
         Route::get('/profile', [AdminAuthController::class, 'getProfile']);
         Route::put('/profile', [AdminAuthController::class, 'updateProfile']);
         Route::post('/update-profile', [AdminAuthController::class, 'updateProfile']);
@@ -35,6 +37,25 @@ Route::prefix('admin')->group(function () {
         Route::put('/update-password', [AdminAuthController::class, 'updatePassword']);
         Route::delete('/documents/{document}', [AdminAuthController::class, 'deleteDocument']);
         Route::post('/logout', [AdminAuthController::class, 'logout']);
+
+        // Role-aware dashboard: employee payload remains unchanged; admins receive management totals.
+        Route::get('/dashboard', [AdminDashboardController::class, 'dashboard']);
+
+        // The authenticated user's notifications (works for both admin and employee tokens).
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::patch('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+        Route::delete('/notifications', [NotificationController::class, 'destroyAll']);
+        Route::get('/notifications/{id}', [NotificationController::class, 'show'])->whereNumber('id');
+        Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead'])->whereNumber('id');
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->whereNumber('id');
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->whereNumber('id');
+
+        // Employee-friendly aliases for clients that keep admin and employee services separate.
+        Route::get('/employee-notifications', [NotificationController::class, 'index']);
+        Route::get('/employee-notifications/{id}', [NotificationController::class, 'show'])->whereNumber('id');
+        Route::patch('/employee-notifications/{id}/read', [NotificationController::class, 'markRead'])->whereNumber('id');
+        Route::delete('/employee-notifications/{id}', [NotificationController::class, 'destroy'])->whereNumber('id');
 
         Route::get('/leave-approvers', [LeaveManagementController::class, 'approvers']);
         Route::get('/leave-requests/calendar', [LeaveManagementController::class, 'calendar']);
@@ -53,13 +74,20 @@ Route::prefix('admin')->group(function () {
         Route::post('/attendance/check-out', [EmployeeAttendanceController::class, 'checkOut']);
         Route::post('/attendance/mark', [EmployeeAttendanceController::class, 'checkIn']);
         Route::post('/attendance/mark-logout', [EmployeeAttendanceController::class, 'checkOut']);
-        Route::get('/dashboard', [EmployeeAttendanceController::class, 'dashboard']);
         Route::get('/birthdays/upcoming', [EmployeeAttendanceController::class, 'upcomingBirthdays']);
         Route::get('/attendance/history', [EmployeeAttendanceController::class, 'history']);
     });
 
     // Protected routes (Sanctum Auth Token Required)
-    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::middleware(['auth:sanctum', 'admin', 'track.admin.action'])->group(function () {
+        // Admin dashboard module counts and employee-notification administration.
+        Route::get('/modules/statistics', [AdminDashboardController::class, 'moduleStatistics']);
+        Route::get('/module-statistics', [AdminDashboardController::class, 'moduleStatistics']);
+        Route::get('/employees/{employeeId}/notifications', [NotificationController::class, 'employeeIndex'])->whereNumber('employeeId');
+        Route::get('/employees/{employeeId}/notifications/{id}', [NotificationController::class, 'employeeShow'])->whereNumber(['employeeId', 'id']);
+        Route::patch('/employees/{employeeId}/notifications/{id}/read', [NotificationController::class, 'employeeMarkRead'])->whereNumber(['employeeId', 'id']);
+        Route::delete('/employees/{employeeId}/notifications/{id}', [NotificationController::class, 'employeeDestroy'])->whereNumber(['employeeId', 'id']);
+
         // Designations
         Route::get('/designations/search', [DesignationManagementController::class, 'search']);
         Route::get('/designations', [DesignationManagementController::class, 'index']);
