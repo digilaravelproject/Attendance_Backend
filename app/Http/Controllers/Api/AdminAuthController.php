@@ -456,6 +456,15 @@ class AdminAuthController extends Controller
         ]);
 
         $data = $user->toArray();
+        $data['role_ids'] = $user->roles->pluck('id')->all();
+        $data['roles'] = $user->roles->map(fn ($role) => [
+            'id' => $role->id,
+            'name' => $role->name,
+            'department' => $role->department,
+            'description' => $role->description,
+            'status' => (bool) $role->status,
+            'permission_ids' => $role->permissions->pluck('id')->values()->all(),
+        ])->all();
         $permissions = $user->roles
             ->flatMap->permissions
             ->unique('id')

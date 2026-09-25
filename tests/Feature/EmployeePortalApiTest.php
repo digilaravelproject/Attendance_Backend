@@ -91,6 +91,52 @@ class EmployeePortalApiTest extends TestCase
         ])->assertOk()->assertJsonPath('data.role', 'employee');
     }
 
+    public function test_multipart_json_role_ids_are_normalized_and_returned_with_permissions(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $designation = Designation::create(['name' => 'Developer', 'hierarchy_level' => 'junior']);
+        $permissions = collect([
+            Permission::create([
+                'module' => 'Attendance', 'module_slug' => 'attendance',
+                'name' => 'Check In', 'action' => 'check_in',
+            ]),
+            Permission::create([
+                'module' => 'Attendance', 'module_slug' => 'attendance',
+                'name' => 'Check Out', 'action' => 'check_out',
+            ]),
+        ]);
+        $role = Role::create(['name' => 'Manager L1', 'department' => 'Information Technology', 'status' => true]);
+        $role->permissions()->sync($permissions->pluck('id'));
+
+        $response = $this->actingAs($admin)->post('/api/admin/employees', [
+            'employee_id' => 'EMP-JSON-ROLE',
+            'name' => 'Multipart Employee',
+            'mobile_number' => '9876543210',
+            'email' => 'multipart@example.com',
+            'emergency_contact' => '9876500000',
+            'address' => 'Pune',
+            'designation_id' => $designation->id,
+            'monthly_salary' => 60000,
+            'date_of_joining' => '2026-09-24',
+            'skills' => ['PHP'],
+            '"role_ids"' => json_encode([$role->id]),
+        ], ['Accept' => 'application/json']);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.role_ids.0', $role->id)
+            ->assertJsonPath('data.roles.0.name', 'Manager L1')
+            ->assertJsonCount(2, 'data.permissions');
+
+        $this->postJson('/api/admin/login', [
+            'email' => 'multipart@example.com',
+            'password' => 'multipartemployee@123',
+        ])->assertOk()
+            ->assertJsonPath('data.role_ids.0', $role->id)
+            ->assertJsonPath('data.roles.0.name', 'Manager L1')
+            ->assertJsonCount(2, 'data.permissions');
+    }
+
     public function test_employee_can_check_in_check_out_and_get_dashboard_birthdays_and_history(): void
     {
         Carbon::setTestNow('2026-09-21 08:55:00');
@@ -160,6 +206,29 @@ class EmployeePortalApiTest extends TestCase
             ->assertJsonPath('data.month', '2026-09')
             ->assertJsonPath('data.summary.present', 1)
             ->assertJsonPath('data.recent_records.0.date', '2026-09-21');
+    }
+
+    public function test_attendance_timestamps_use_india_timezone(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-24 11:30:00', 'Asia/Kolkata'));
+        $employee = User::factory()->create([
+            'role' => 'employee',
+            'status' => 'Active',
+            'employee_id' => 'EMP-IST',
+        ]);
+
+        $this->actingAs($employee)->postJson('/api/admin/attendance/check-in')
+            ->assertCreated()
+            ->assertJsonPath('data.date', '2026-09-24')
+            ->assertJsonPath('data.check_in', '11:30 AM')
+            ->assertJsonPath('data.check_in_at', '2026-09-24T11:30:00+05:30');
+
+        Carbon::setTestNow(Carbon::parse('2026-09-24 18:00:00', 'Asia/Kolkata'));
+
+        $this->actingAs($employee)->postJson('/api/admin/attendance/check-out')
+            ->assertOk()
+            ->assertJsonPath('data.check_out', '06:00 PM')
+            ->assertJsonPath('data.check_out_at', '2026-09-24T18:00:00+05:30');
     }
 
     public function test_admin_receives_admin_dashboard_from_shared_dashboard_route(): void

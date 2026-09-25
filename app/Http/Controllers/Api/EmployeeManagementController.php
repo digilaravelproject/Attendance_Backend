@@ -266,6 +266,22 @@ class EmployeeManagementController extends Controller
     private function prepareAliases(Request $request): void
     {
         $updates = [];
+
+        // Multipart clients sometimes send the key with literal quotes and/or
+        // send the array as JSON text (for example: `"role_ids"` = `[10]`).
+        // Normalize those forms before validation so the role is not silently
+        // omitted from employee onboarding.
+        $roleIds = $request->input('role_ids', $request->input('"role_ids"'));
+        if (is_string($roleIds)) {
+            $decoded = json_decode($roleIds, true);
+            $roleIds = is_array($decoded)
+                ? $decoded
+                : array_values(array_filter(array_map('trim', explode(',', $roleIds)), fn ($id) => $id !== ''));
+        }
+        if ($roleIds !== null) {
+            $updates['role_ids'] = $roleIds;
+        }
+
         if ($request->has('monthly_base_salary') && ! $request->has('monthly_salary')) {
             $updates['monthly_salary'] = $request->input('monthly_base_salary');
         }
@@ -304,7 +320,28 @@ class EmployeeManagementController extends Controller
 
     private function data(User $employee): array
     {
+        $employee->loadMissing('roles.permissions');
         $data = $employee->toArray();
+        $roles = $employee->roles->values();
+        $permissions = $roles->flatMap->permissions->unique('id')->values();
+        $data['role_ids'] = $roles->pluck('id')->all();
+        $data['roles'] = $roles->map(fn ($role) => [
+            'id' => $role->id,
+            'name' => $role->name,
+            'department' => $role->department,
+            'description' => $role->description,
+            'status' => (bool) $role->status,
+            'permission_ids' => $role->permissions->pluck('id')->values()->all(),
+        ])->all();
+        $data['permission_ids'] = $permissions->pluck('id')->all();
+        $data['permissions'] = $permissions->map(fn ($permission) => [
+            'id' => $permission->id,
+            'module' => $permission->module,
+            'module_slug' => $permission->module_slug,
+            'name' => $permission->name,
+            'action' => $permission->action,
+            'description' => $permission->description,
+        ])->all();
         $data['monthly_base_salary'] = $employee->monthly_salary;
         $data['sales_target_enabled'] = (bool) $employee->sales_target_enabled;
         $designation = $employee->designation_id ? Designation::find($employee->designation_id) : null;
