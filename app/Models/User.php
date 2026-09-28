@@ -106,6 +106,11 @@ class User extends Authenticatable
         return $this->hasMany(Attendance::class);
     }
 
+    public function salaries()
+    {
+        return $this->hasMany(Salary::class);
+    }
+
     public function assignedShift()
     {
         return $this->belongsTo(Shift::class, 'assigned_shift_id');

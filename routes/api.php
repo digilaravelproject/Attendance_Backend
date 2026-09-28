@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AdminAttendanceController;
 use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AssignedShiftController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Api\LeaveManagementController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\SalaryController;
 use App\Http\Controllers\Api\ShiftManagementController;
 use App\Http\Controllers\Api\ShiftRotationController;
 use Illuminate\Support\Facades\Route;
@@ -66,6 +68,9 @@ Route::prefix('admin')->group(function () {
         Route::post('/leave-requests/{id}/reject', [LeaveManagementController::class, 'reject'])->whereNumber('id');
         Route::get('/leave-types', [LeaveManagementController::class, 'leaveTypes']);
         Route::get('/holidays', [LeaveManagementController::class, 'holidays']);
+
+        // A payslip is available to administrators and to the employee who owns it.
+        Route::get('/salaries/{salary}/payslip', [SalaryController::class, 'payslip'])->whereNumber('salary');
     });
 
     // Employee panel routes use the same /api/admin authorization endpoints and token.
@@ -76,6 +81,8 @@ Route::prefix('admin')->group(function () {
         Route::post('/attendance/mark-logout', [EmployeeAttendanceController::class, 'checkOut']);
         Route::get('/birthdays/upcoming', [EmployeeAttendanceController::class, 'upcomingBirthdays']);
         Route::get('/attendance/history', [EmployeeAttendanceController::class, 'history']);
+        Route::get('/salary-history', [SalaryController::class, 'myHistory']);
+        Route::get('/salaries/my-history', [SalaryController::class, 'myHistory']);
     });
 
     // Protected routes (Sanctum Auth Token Required)
@@ -116,6 +123,13 @@ Route::prefix('admin')->group(function () {
         Route::match(['put', 'patch'], '/employees/{id}', [EmployeeManagementController::class, 'update']);
         Route::post('/employees/{id}', [EmployeeManagementController::class, 'update']);
         Route::delete('/employees/{id}', [EmployeeManagementController::class, 'destroy']);
+
+        // Attendance and payroll management.
+        Route::get('/attendance', [AdminAttendanceController::class, 'index']);
+        Route::get('/salaries', [SalaryController::class, 'index']);
+        Route::get('/salaries/employee/{employeeId}', [SalaryController::class, 'showEmployee']);
+        Route::get('/salaries/employee/{employeeId}/breakdown', [SalaryController::class, 'breakdown']);
+        Route::post('/salaries', [SalaryController::class, 'store']);
 
         // Permission APIs (Requirement 2 & Screenshot 1)
         Route::get('/permissions/total', [PermissionController::class, 'total']);
