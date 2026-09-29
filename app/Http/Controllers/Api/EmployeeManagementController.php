@@ -65,6 +65,36 @@ class EmployeeManagementController extends Controller
         return $this->index($request);
     }
 
+    public function allUsers(Request $request): JsonResponse
+    {
+        $query = User::query()->whereIn('role', ['admin', 'employee']);
+        if ($request->filled('role')) {
+            $query->where('role', $request->input('role'));
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $query->where(fn ($builder) => $builder->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('employee_id', 'like', "%{$search}%"));
+        }
+
+        $users = $query->latest()->get($this->columns())->map(fn (User $user) => $this->data($user));
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Administrators and employees retrieved successfully.',
+            'counts' => [
+                'total_users' => $users->count(),
+                'admins' => $users->where('role', 'admin')->count(),
+                'employees' => $users->where('role', 'employee')->count(),
+            ],
+            'data' => $users->values(),
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $this->prepareAliases($request);
@@ -128,10 +158,47 @@ class EmployeeManagementController extends Controller
             return response()->json(['status' => false, 'message' => 'Employee not found.'], 404);
         }
 
+        $employee->load([
+            'departmentDetails', 'designationDetails', 'assignedShift',
+            'leaveRequests.leaveType', 'leaveRequests.assignees:id,name,email,role,designation',
+            'attendances.shift', 'salaries', 'notifications',
+        ]);
+        $leaveCounts = $employee->leaveRequests->countBy('status');
+        $attendanceCounts = $employee->attendances->countBy('status');
+        $data = $this->data($employee);
+        $data['summary'] = [
+            'leave_requests' => [
+                'total' => $employee->leaveRequests->count(),
+                'pending' => (int) ($leaveCounts['Pending'] ?? 0),
+                'approved' => (int) ($leaveCounts['Approved'] ?? 0),
+                'rejected' => (int) ($leaveCounts['Rejected'] ?? 0),
+                'cancelled' => (int) ($leaveCounts['Cancelled'] ?? 0),
+            ],
+            'attendance' => [
+                'total_records' => $employee->attendances->count(),
+                'present' => (int) ($attendanceCounts['Present'] ?? 0),
+                'absent' => (int) ($attendanceCounts['Absent'] ?? 0),
+                'half_day' => (int) ($attendanceCounts['Half Day'] ?? 0),
+                'late' => (int) ($attendanceCounts['Late'] ?? 0),
+            ],
+            'salaries' => [
+                'total_records' => $employee->salaries->count(),
+                'total_net_paid' => (float) $employee->salaries->where('status', 'Paid')->sum('net_payable'),
+            ],
+            'notifications' => [
+                'total' => $employee->notifications->count(),
+                'unread' => $employee->notifications->whereNull('read_at')->count(),
+            ],
+        ];
+        $data['leave_requests'] = $employee->leaveRequests->sortByDesc('created_at')->values();
+        $data['attendances'] = $employee->attendances->sortByDesc('attendance_date')->values();
+        $data['salaries'] = $employee->salaries->sortByDesc('salary_month')->values();
+        $data['notifications'] = $employee->notifications->sortByDesc('created_at')->values();
+
         return response()->json([
             'status' => true,
             'message' => 'Employee details retrieved successfully.',
-            'data' => $this->data($employee),
+            'data' => $data,
         ]);
     }
 

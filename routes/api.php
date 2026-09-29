@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\EmployeeManagementController;
 use App\Http\Controllers\Api\LeaveManagementController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SalaryController;
 use App\Http\Controllers\Api\ShiftManagementController;
@@ -69,6 +70,19 @@ Route::prefix('admin')->group(function () {
         Route::get('/leave-types', [LeaveManagementController::class, 'leaveTypes']);
         Route::get('/holidays', [LeaveManagementController::class, 'holidays']);
 
+        // Project management for administrators/managers and assigned-project views for employees.
+        Route::get('/projects/assigned', [ProjectController::class, 'assigned']);
+        Route::get('/projects/assigned/{id}', [ProjectController::class, 'assignedShow'])->whereNumber('id');
+        Route::get('/projects/total', [ProjectController::class, 'total']);
+        Route::get('/projects/search', [ProjectController::class, 'search']);
+        Route::get('/projects', [ProjectController::class, 'index']);
+        Route::post('/projects', [ProjectController::class, 'store']);
+        Route::get('/projects/{id}', [ProjectController::class, 'show'])->whereNumber('id');
+        Route::match(['put', 'patch'], '/projects/{id}', [ProjectController::class, 'update'])->whereNumber('id');
+        Route::post('/projects/{id}', [ProjectController::class, 'update'])->whereNumber('id');
+        Route::delete('/projects/{id}/employees/{employeeId}', [ProjectController::class, 'removeEmployee'])->whereNumber(['id', 'employeeId']);
+        Route::delete('/projects/{id}', [ProjectController::class, 'destroy'])->whereNumber('id');
+
         // A payslip is available to administrators and to the employee who owns it.
         Route::get('/salaries/{salary}/payslip', [SalaryController::class, 'payslip'])->whereNumber('salary');
     });
@@ -117,6 +131,9 @@ Route::prefix('admin')->group(function () {
 
         // Employees (stored in users with role=employee)
         Route::get('/employees/search', [EmployeeManagementController::class, 'search']);
+        Route::get('/employees/all-users', [EmployeeManagementController::class, 'allUsers']);
+        Route::get('/employees/leaves', [LeaveManagementController::class, 'allEmployeeLeaves']);
+        Route::get('/employees/leave-reports', [LeaveManagementController::class, 'allEmployeeReports']);
         Route::get('/employees', [EmployeeManagementController::class, 'index']);
         Route::post('/employees', [EmployeeManagementController::class, 'store']);
         Route::get('/employees/{id}', [EmployeeManagementController::class, 'show']);

@@ -46,6 +46,11 @@ class LeaveRequest extends Model
         return $this->belongsTo(User::class, 'assigned_to_user_id');
     }
 
+    public function assignees()
+    {
+        return $this->belongsToMany(User::class, 'leave_request_assignees')->withTimestamps();
+    }
+
     public function actions()
     {
         return $this->hasMany(LeaveRequestAction::class)->orderByDesc('id');

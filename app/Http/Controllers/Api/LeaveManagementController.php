@@ -35,9 +35,11 @@ class LeaveManagementController extends Controller
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
         }
-        $query = LeaveRequest::query()->with(['employee.departmentDetails', 'employee.designationDetails', 'leaveType', 'assignee:id,name,email,role,designation']);
+        $query = LeaveRequest::query()->with(['employee.departmentDetails', 'employee.designationDetails', 'leaveType', 'assignee:id,name,email,role,designation', 'assignees:id,name,email,role,designation']);
         if ($request->user()->role === 'employee') {
-            $query->where('user_id', $request->user()->id);
+            $query->where(fn ($builder) => $builder
+                ->where('user_id', $request->user()->id)
+                ->orWhereHas('assignees', fn ($assignee) => $assignee->whereKey($request->user()->id)));
         }
         if ($request->filled('year')) {
             $query->whereYear('from_date', (int) $request->input('year'));
@@ -47,7 +49,9 @@ class LeaveManagementController extends Controller
         $paginator = $query->latest()->paginate($perPage);
         $countQuery = LeaveRequest::query();
         if ($request->user()->role === 'employee') {
-            $countQuery->where('user_id', $request->user()->id);
+            $countQuery->where(fn ($builder) => $builder
+                ->where('user_id', $request->user()->id)
+                ->orWhereHas('assignees', fn ($assignee) => $assignee->whereKey($request->user()->id)));
         }
         if ($request->filled('year')) {
             $countQuery->whereYear('from_date', (int) $request->input('year'));
@@ -77,6 +81,7 @@ class LeaveManagementController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->normalizeAssignedUserIds($request);
         if ($request->user()->role === 'employee') {
             $request->merge(['user_id' => $request->user()->id]);
         }
@@ -84,17 +89,20 @@ class LeaveManagementController extends Controller
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
         }
-        if ($request->user()->role === 'employee' && ! $request->filled('assigned_to_user_id')) {
-            return $this->validationError(['assigned_to_user_id' => ['The assigned to field is required.']]);
+        if ($request->user()->role === 'employee' && ! $request->filled('assigned_to_user_ids')) {
+            return $this->validationError([
+                'assigned_to_user_id' => ['The assigned to field is required.'],
+                'assigned_to_user_ids' => ['Select at least one user to review this leave.'],
+            ]);
         }
         if ($request->input('session', 'Full Day') !== 'Full Day' && $request->input('from_date') !== $request->input('to_date')) {
             return $this->validationError(['session' => ['A half-day session must have the same from and to date.']]);
         }
 
-        if ($request->filled('assigned_to_user_id')) {
-            $assignee = User::find($request->input('assigned_to_user_id'));
-            if (! $assignee || ! $this->isApprover($assignee) || $assignee->id === $request->user()->id) {
-                return $this->validationError(['assigned_to_user_id' => ['Select an active administrator or manager other than yourself.']]);
+        foreach ($request->input('assigned_to_user_ids', []) as $assigneeId) {
+            $assignee = User::find($assigneeId);
+            if (! $assignee || ! $this->isApprover($assignee) || (int) $assignee->id === (int) $request->input('user_id')) {
+                return $this->validationError(['assigned_to_user_ids' => ['Select active administrators or managers other than the leave owner.']]);
             }
         }
         $payload = $this->requestPayload($request);
@@ -110,6 +118,7 @@ class LeaveManagementController extends Controller
         }
 
         $leave = LeaveRequest::create($payload);
+        $leave->assignees()->sync($request->input('assigned_to_user_ids', []));
         LeaveRequestAction::create([
             'leave_request_id' => $leave->id,
             'action' => 'Submitted',
@@ -130,7 +139,7 @@ class LeaveManagementController extends Controller
         if (! $leave) {
             return response()->json(['status' => false, 'message' => 'Leave request not found.'], 404);
         }
-        if (request()->user()->role === 'employee' && (int) $leave->user_id !== (int) request()->user()->id && (int) $leave->assigned_to_user_id !== (int) request()->user()->id) {
+        if (request()->user()->role === 'employee' && (int) $leave->user_id !== (int) request()->user()->id && ! $leave->assignees()->whereKey(request()->user()->id)->exists()) {
             return response()->json(['status' => false, 'message' => 'Forbidden.'], 403);
         }
 
@@ -151,13 +160,25 @@ class LeaveManagementController extends Controller
             return response()->json(['status' => false, 'message' => 'Only pending leave requests can be edited.'], 422);
         }
 
+        $this->normalizeAssignedUserIds($request);
         $validator = Validator::make($request->all(), $this->requestRules(true));
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
         }
+        if ($request->has('assigned_to_user_ids')) {
+            foreach ($request->input('assigned_to_user_ids', []) as $assigneeId) {
+                $assignee = User::find($assigneeId);
+                if (! $assignee || ! $this->isApprover($assignee) || (int) $assignee->id === (int) $leave->user_id) {
+                    return $this->validationError(['assigned_to_user_ids' => ['Select active administrators or managers other than the leave owner.']]);
+                }
+            }
+        }
         $payload = $this->requestPayload($request, true);
         if ($payload !== []) {
             $leave->update($payload);
+        }
+        if ($request->has('assigned_to_user_ids')) {
+            $leave->assignees()->sync($request->input('assigned_to_user_ids'));
         }
 
         return response()->json([
@@ -226,6 +247,9 @@ class LeaveManagementController extends Controller
         $validator = Validator::make($request->all(), [
             'from_date' => ['sometimes', 'date_format:Y-m-d'],
             'to_date' => ['sometimes', 'date_format:Y-m-d', 'after_or_equal:from_date'],
+            'department_id' => ['sometimes', 'integer', 'exists:departments,id'],
+            'leave_type_id' => ['sometimes', 'integer', 'exists:leave_types,id'],
+            'status' => ['sometimes', Rule::in(['all', 'All', 'pending', 'Pending', 'approved', 'Approved', 'rejected', 'Rejected', 'cancelled', 'Cancelled'])],
         ]);
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
@@ -235,7 +259,17 @@ class LeaveManagementController extends Controller
         if ($to->lt($from)) {
             return $this->validationError(['to_date' => ['The to date must be after or equal to the from date.']]);
         }
-        $base = LeaveRequest::whereDate('from_date', '<=', $to)->whereDate('to_date', '>=', $from);
+        $base = LeaveRequest::whereDate('leave_requests.from_date', '<=', $to)
+            ->whereDate('leave_requests.to_date', '>=', $from);
+        if ($request->filled('department_id')) {
+            $base->whereHas('employee', fn ($employee) => $employee->where('department_id', $request->input('department_id')));
+        }
+        if ($request->filled('leave_type_id')) {
+            $base->where('leave_requests.leave_type_id', $request->input('leave_type_id'));
+        }
+        if ($request->filled('status') && strtolower($request->input('status')) !== 'all') {
+            $base->where('leave_requests.status', ucfirst(strtolower($request->input('status'))));
+        }
         $byStatus = (clone $base)->selectRaw('status, COUNT(*) as requests, SUM(total_days) as days')
             ->groupBy('status')->get();
         $byType = (clone $base)->join('leave_types', 'leave_types.id', '=', 'leave_requests.leave_type_id')
@@ -243,21 +277,46 @@ class LeaveManagementController extends Controller
             ->groupBy('leave_types.id', 'leave_types.name')->get();
         $byDepartment = (clone $base)->join('users', 'users.id', '=', 'leave_requests.user_id')
             ->leftJoin('departments', 'departments.id', '=', 'users.department_id')
-            ->selectRaw("COALESCE(departments.name, users.department, 'Unassigned') as department, COUNT(*) as requests, SUM(leave_requests.total_days) as days")
+            ->selectRaw("COALESCE(departments.name, users.department, 'Unassigned') as department, COUNT(*) as requests, SUM(leave_requests.total_days) as days, SUM(CASE WHEN leave_requests.status = 'Approved' THEN 1 ELSE 0 END) as approved, SUM(CASE WHEN leave_requests.status = 'Rejected' THEN 1 ELSE 0 END) as rejected, SUM(CASE WHEN leave_requests.status = 'Pending' THEN 1 ELSE 0 END) as pending, SUM(CASE WHEN leave_requests.status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled")
             ->groupBy('departments.name', 'users.department')->get();
+
+        $statusCounts = $byStatus->pluck('requests', 'status');
+        $totalRequests = (clone $base)->count();
+        $byType->each(function ($row) use ($totalRequests) {
+            $row->percentage = $totalRequests > 0 ? round(((int) $row->requests / $totalRequests) * 100, 2) : 0;
+        });
+        $requests = (clone $base)->with([
+            'employee.departmentDetails', 'employee.designationDetails', 'leaveType',
+            'assignees:id,name,email,role,designation',
+        ])->orderByDesc('from_date')->get()->map(fn (LeaveRequest $leave) => $this->data($leave));
 
         return response()->json([
             'status' => true,
             'message' => 'Leave report retrieved successfully.',
             'period' => ['from_date' => $from->toDateString(), 'to_date' => $to->toDateString()],
             'summary' => [
-                'total_requests' => (clone $base)->count(),
+                'total_requests' => $totalRequests,
                 'total_days' => (float) (clone $base)->sum('total_days'),
+                'approved' => (int) ($statusCounts['Approved'] ?? 0),
+                'rejected' => (int) ($statusCounts['Rejected'] ?? 0),
+                'pending' => (int) ($statusCounts['Pending'] ?? 0),
+                'cancelled' => (int) ($statusCounts['Cancelled'] ?? 0),
                 'by_status' => $byStatus,
                 'by_leave_type' => $byType,
                 'by_department' => $byDepartment,
             ],
+            'data' => $requests,
         ]);
+    }
+
+    public function allEmployeeLeaves(Request $request): JsonResponse
+    {
+        return $this->index($request);
+    }
+
+    public function allEmployeeReports(Request $request): JsonResponse
+    {
+        return $this->reports($request);
     }
 
     public function leaveTypes(Request $request): JsonResponse
@@ -458,7 +517,7 @@ class LeaveManagementController extends Controller
         if (! $leave) {
             return response()->json(['status' => false, 'message' => 'Leave request not found.'], 404);
         }
-        if ($request->user()->role !== 'admin' && ((int) $leave->assigned_to_user_id !== (int) $request->user()->id || (int) $leave->user_id === (int) $request->user()->id || ! $this->isApprover($request->user()))) {
+        if ($request->user()->role !== 'admin' && (! $leave->assignees()->whereKey($request->user()->id)->exists() || (int) $leave->user_id === (int) $request->user()->id || ! $this->isApprover($request->user()))) {
             return response()->json(['status' => false, 'message' => 'Only the assigned manager or an administrator may review this leave.'], 403);
         }
         if ($leave->status !== 'Pending') {
@@ -564,6 +623,8 @@ class LeaveManagementController extends Controller
             'contact_during_leave' => ['sometimes', 'nullable', 'string', 'max:50'],
             'address_during_leave' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'assigned_to_user_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
+            'assigned_to_user_ids' => ['sometimes', 'array', 'min:1'],
+            'assigned_to_user_ids.*' => ['integer', 'distinct', 'exists:users,id'],
             'attachment' => ['sometimes', 'nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
             'attachment_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'attachment_path' => ['sometimes', 'nullable', 'string', 'max:2048'],
@@ -577,6 +638,9 @@ class LeaveManagementController extends Controller
             'contact_during_leave', 'address_during_leave', 'assigned_to_user_id',
             'session', 'attachment_name', 'attachment_path',
         ]);
+        if ($request->has('assigned_to_user_ids')) {
+            $payload['assigned_to_user_id'] = collect($request->input('assigned_to_user_ids'))->first();
+        }
         if (! $request->has('total_days') && $request->filled('from_date') && $request->filled('to_date')) {
             $payload['total_days'] = Carbon::parse($request->input('from_date'))
                 ->diffInDays(Carbon::parse($request->input('to_date'))) + 1;
@@ -668,6 +732,7 @@ class LeaveManagementController extends Controller
         return $this->data($leave->load([
             'employee.departmentDetails', 'employee.designationDetails', 'leaveType',
             'assignee:id,name,email,role,designation',
+            'assignees:id,name,email,role,designation',
             'reviewer:id,name,email', 'actions.actor:id,name,email',
         ]));
     }
@@ -675,6 +740,9 @@ class LeaveManagementController extends Controller
     private function data(LeaveRequest $leave): array
     {
         $data = $leave->toArray();
+        if ($leave->relationLoaded('assignees')) {
+            $data['assigned_to_user_ids'] = $leave->assignees->pluck('id')->values()->all();
+        }
         if ($leave->attachment_path) {
             $data['attachment_url'] = Storage::disk('public')->url($leave->attachment_path);
         }
@@ -702,6 +770,21 @@ class LeaveManagementController extends Controller
         return $request->user() instanceof User && strtolower((string) $request->user()->role) === 'admin'
             ? (int) $request->user()->id
             : null;
+    }
+
+    private function normalizeAssignedUserIds(Request $request): void
+    {
+        $ids = $request->input('assigned_to_user_ids', $request->input('assigned_to_user_id'));
+        if (is_string($ids)) {
+            $decoded = json_decode($ids, true);
+            $ids = is_array($decoded) ? $decoded : explode(',', $ids);
+        }
+        if ($ids !== null && ! is_array($ids)) {
+            $ids = [$ids];
+        }
+        if (is_array($ids)) {
+            $request->merge(['assigned_to_user_ids' => array_values(array_unique(array_filter($ids, fn ($id) => $id !== null && $id !== ''))) ]);
+        }
     }
 
     private function isApprover(User $user): bool

@@ -96,6 +96,21 @@ class User extends Authenticatable
         return $this->hasMany(LeaveRequest::class);
     }
 
+    public function assignedLeaveRequests()
+    {
+        return $this->belongsToMany(LeaveRequest::class, 'leave_request_assignees')->withTimestamps();
+    }
+
+    public function projects()
+    {
+        return $this->belongsToMany(Project::class)->withPivot('assigned_by')->withTimestamps();
+    }
+
+    public function createdProjects()
+    {
+        return $this->hasMany(Project::class, 'created_by');
+    }
+
     public function documents()
     {
         return $this->hasMany(AdminDocument::class);
