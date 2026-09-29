@@ -290,19 +290,22 @@ class LeaveManagementController extends Controller
 
     public function holidays(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), ['year' => ['sometimes', 'integer', 'between:2000,2100']]);
+        $validator = Validator::make($request->all(), [
+            'year' => ['sometimes', 'integer', 'between:2000,2100'],
+            'location' => ['sometimes', 'string', 'max:255'],
+        ]);
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
         }
         $year = (int) $request->input('year', now()->year);
-        $items = Holiday::whereYear('date', $year)->orderBy('date')->get()->map(fn (Holiday $holiday) => [
-            'id' => $holiday->id,
-            'name' => $holiday->name,
-            'date' => $holiday->date->toDateString(),
-            'day' => $holiday->date->format('D'),
-            'type' => $holiday->type,
-            'description' => $holiday->description,
-        ]);
+        $query = Holiday::query()->whereYear('date', $year);
+        $location = trim((string) $request->input('location', ''));
+        if ($location !== '' && strcasecmp($location, 'All Locations') !== 0) {
+            $query->where(fn ($builder) => $builder
+                ->where('location', 'All Locations')
+                ->orWhere('location', $location));
+        }
+        $items = $query->orderBy('date')->get()->map(fn (Holiday $holiday) => $this->holidayData($holiday));
         $counts = $items->countBy('type');
 
         return response()->json([
@@ -324,18 +327,69 @@ class LeaveManagementController extends Controller
 
     public function storeHoliday(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
-            'date' => ['required', 'date_format:Y-m-d'],
-            'type' => ['required', Rule::in(['National', 'Restricted', 'Optional'])],
-            'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
-        ]);
+        $input = $this->normalizedHolidayInput($request);
+        $validator = Validator::make($input, $this->holidayRules());
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
         }
-        $holiday = Holiday::create($validator->validated());
+        $payload = $validator->validated();
+        if ($this->holidayAlreadyExists($payload['name'], $payload['date'])) {
+            return $this->validationError(['name' => ['A holiday with this name and date already exists.']]);
+        }
+        $holiday = Holiday::create($payload);
 
-        return response()->json(['status' => true, 'message' => 'Holiday created successfully.', 'data' => $holiday], 201);
+        return response()->json(['status' => true, 'message' => 'Holiday created successfully.', 'data' => $this->holidayData($holiday)], 201);
+    }
+
+    public function showHoliday(string $id): JsonResponse
+    {
+        $holiday = Holiday::find($id);
+        if (! $holiday) {
+            return response()->json(['status' => false, 'message' => 'Holiday not found.'], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Holiday details retrieved successfully.',
+            'data' => $this->holidayData($holiday),
+        ]);
+    }
+
+    public function updateHoliday(Request $request, string $id): JsonResponse
+    {
+        $holiday = Holiday::find($id);
+        if (! $holiday) {
+            return response()->json(['status' => false, 'message' => 'Holiday not found.'], 404);
+        }
+        $input = $this->normalizedHolidayInput($request);
+        $validator = Validator::make($input, $this->holidayRules(true));
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors()->toArray());
+        }
+        $payload = $validator->validated();
+        $name = $payload['name'] ?? $holiday->name;
+        $date = $payload['date'] ?? $holiday->date->toDateString();
+        if ($this->holidayAlreadyExists($name, $date, $holiday->id)) {
+            return $this->validationError(['name' => ['A holiday with this name and date already exists.']]);
+        }
+        $holiday->update($payload);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Holiday updated successfully.',
+            'data' => $this->holidayData($holiday->fresh()),
+        ]);
+    }
+
+    public function destroyHoliday(string $id): JsonResponse
+    {
+        $holiday = Holiday::find($id);
+        if (! $holiday) {
+            return response()->json(['status' => false, 'message' => 'Holiday not found.'], 404);
+        }
+        $holiday->delete();
+
+        return response()->json(['status' => true, 'message' => 'Holiday deleted successfully.']);
     }
 
     public function storeLeaveType(Request $request): JsonResponse
@@ -546,6 +600,66 @@ class LeaveManagementController extends Controller
             'is_paid' => ['sometimes', 'boolean'],
             'requires_attachment' => ['sometimes', 'boolean'],
             'status' => ['sometimes', Rule::in(['Active', 'Inactive'])],
+        ];
+    }
+
+    private function holidayRules(bool $updating = false): array
+    {
+        $presence = $updating ? 'sometimes' : 'required';
+
+        return [
+            'name' => [$presence, 'string', 'max:255'],
+            'date' => [$presence, 'date_format:Y-m-d'],
+            'type' => [$presence, Rule::in(['National', 'Restricted', 'Optional'])],
+            'location' => ['sometimes', 'string', 'max:255'],
+            'repeat_every_year' => ['sometimes', 'boolean'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:200'],
+        ];
+    }
+
+    private function normalizedHolidayInput(Request $request): array
+    {
+        $input = $request->all();
+        if (array_key_exists('name', $input) && is_string($input['name'])) {
+            $input['name'] = trim($input['name']);
+        }
+        if (array_key_exists('location', $input) && is_string($input['location'])) {
+            $input['location'] = trim($input['location']);
+        }
+        if (array_key_exists('type', $input) && is_string($input['type'])) {
+            $type = strtolower(trim($input['type']));
+            $input['type'] = match ($type) {
+                'national', 'national holiday' => 'National',
+                'restricted', 'restricted holiday' => 'Restricted',
+                'optional', 'optional holiday' => 'Optional',
+                default => $input['type'],
+            };
+        }
+
+        return $input;
+    }
+
+    private function holidayAlreadyExists(string $name, string $date, ?int $ignoreId = null): bool
+    {
+        return Holiday::whereDate('date', $date)->where('name', $name)
+            ->when($ignoreId, fn ($query) => $query->whereKeyNot($ignoreId))
+            ->exists();
+    }
+
+    private function holidayData(Holiday $holiday): array
+    {
+        return [
+            'id' => $holiday->id,
+            'name' => $holiday->name,
+            'date' => $holiday->date->toDateString(),
+            'day' => $holiday->date->format('D'),
+            'day_name' => $holiday->date->format('l'),
+            'type' => $holiday->type,
+            'location' => $holiday->location,
+            'repeat_every_year' => $holiday->repeat_every_year,
+            'description' => $holiday->description,
+            'created_at' => $holiday->created_at,
+            'updated_at' => $holiday->updated_at,
         ];
     }
 

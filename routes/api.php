@@ -192,6 +192,9 @@ Route::prefix('admin')->group(function () {
         Route::match(['put', 'patch'], '/leave-types/{id}', [LeaveManagementController::class, 'updateLeaveType']);
         Route::delete('/leave-types/{id}', [LeaveManagementController::class, 'destroyLeaveType']);
         Route::post('/holidays', [LeaveManagementController::class, 'storeHoliday']);
+        Route::get('/holidays/{id}', [LeaveManagementController::class, 'showHoliday'])->whereNumber('id');
+        Route::match(['put', 'patch'], '/holidays/{id}', [LeaveManagementController::class, 'updateHoliday'])->whereNumber('id');
+        Route::delete('/holidays/{id}', [LeaveManagementController::class, 'destroyHoliday'])->whereNumber('id');
 
     });
 });
