@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\EmployeeAttendanceController;
 use App\Http\Controllers\Api\EmployeeManagementController;
 use App\Http\Controllers\Api\LeaveManagementController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PerformanceController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\RoleController;
@@ -97,6 +98,20 @@ Route::prefix('admin')->group(function () {
         Route::post('/leave-requests/{id}/reject', [LeaveManagementController::class, 'reject'])->whereNumber('id');
         Route::get('/leave-types', [LeaveManagementController::class, 'leaveTypes']);
         Route::get('/holidays', [LeaveManagementController::class, 'holidays']);
+
+        // Dynamic performance APIs. Visibility is enforced in the controller:
+        // admin = all employees, manager = self/direct reports, employee = self.
+        Route::get('/performance/employees', [PerformanceController::class, 'index']);
+        Route::get('/performance/employees/{employee}', [PerformanceController::class, 'show'])->whereNumber('employee');
+        Route::get('/performance/employees/{employee}/attendance', [PerformanceController::class, 'attendance'])->whereNumber('employee');
+        Route::get('/performance/employees/{employee}/leave', [PerformanceController::class, 'leave'])->whereNumber('employee');
+        Route::get('/performance/employees/{employee}/tasks', [PerformanceController::class, 'tasks'])->whereNumber('employee');
+        Route::get('/performance/employees/{employee}/task-completion', [PerformanceController::class, 'tasks'])->whereNumber('employee');
+        Route::get('/performance/employees/{employee}/timely-submissions', [PerformanceController::class, 'tasks'])->whereNumber('employee');
+        Route::get('/performance/employees/{employee}/quality', [PerformanceController::class, 'quality'])->whereNumber('employee');
+        Route::post('/performance/employees/{employee}/quality-reviews', [PerformanceController::class, 'storeQualityReview'])->whereNumber('employee');
+        Route::get('/performance/employees/{employee}/messages', [PerformanceController::class, 'messages'])->whereNumber('employee');
+        Route::post('/performance/employees/{employee}/messages', [PerformanceController::class, 'sendMessage'])->whereNumber('employee');
 
         // Project management for administrators/managers and assigned-project views for employees.
         Route::get('/projects/assigned', [ProjectController::class, 'assigned']);
@@ -274,4 +289,3 @@ Route::prefix('tasks')->group(function () {
     Route::get('/{id}/comments', [TaskController::class, 'getComments'])->whereNumber('id');
     Route::post('/{id}/comments', [TaskController::class, 'addComment'])->whereNumber('id');
 });
-

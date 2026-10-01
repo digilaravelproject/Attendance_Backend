@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class Task extends Model
 {
@@ -19,6 +19,7 @@ class Task extends Model
         'status',
         'start_date',
         'due_date',
+        'completed_at',
         'estimated_hours',
         'created_by',
         'total_logged_seconds',
@@ -34,6 +35,7 @@ class Task extends Model
         return [
             'start_date' => 'date:Y-m-d',
             'due_date' => 'date:Y-m-d',
+            'completed_at' => 'datetime',
             'total_logged_seconds' => 'integer',
             'is_timer_running' => 'boolean',
             'timer_started_at' => 'datetime',
@@ -88,6 +90,11 @@ class Task extends Model
         return $this->belongsTo(User::class, 'testing_submitted_by');
     }
 
+    public function qualityReviews()
+    {
+        return $this->hasMany(TaskQualityReview::class);
+    }
+
     /**
      * Compute real-time logged seconds including current running timer.
      */
@@ -97,6 +104,7 @@ class Task extends Model
         if ($this->is_timer_running && $this->timer_started_at) {
             $seconds += Carbon::now()->diffInSeconds($this->timer_started_at);
         }
+
         return $seconds;
     }
 

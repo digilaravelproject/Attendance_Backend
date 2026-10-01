@@ -11,7 +11,6 @@ use App\Models\TaskTimeLog;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class TaskController extends Controller
@@ -78,6 +77,7 @@ class TaskController extends Controller
             'status' => $request->input('status', 'Pending'),
             'start_date' => $request->input('start_date'),
             'due_date' => $request->input('due_date'),
+            'completed_at' => $request->input('status') === 'Completed' ? Carbon::now() : null,
             'estimated_hours' => $request->input('estimated_hours'),
             'created_by' => $user ? $user->id : 1,
         ]);
@@ -126,8 +126,8 @@ class TaskController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('designation', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('designation', 'like', "%{$search}%");
             });
         }
 
@@ -174,9 +174,9 @@ class TaskController extends Controller
                 } elseif ($isManager) {
                     $query->where(function ($q) use ($user) {
                         $q->where('created_by', $user->id)
-                          ->orWhereHas('assignees', function ($aQ) use ($user) {
-                              $aQ->where('users.id', $user->id);
-                          });
+                            ->orWhereHas('assignees', function ($aQ) use ($user) {
+                                $aQ->where('users.id', $user->id);
+                            });
                     });
                 } else {
                     $query->whereHas('assignees', function ($aQ) use ($user) {
@@ -241,9 +241,9 @@ class TaskController extends Controller
                 } elseif ($isManager) {
                     $query->where(function ($q) use ($user) {
                         $q->where('created_by', $user->id)
-                          ->orWhereHas('assignees', function ($aQ) use ($user) {
-                              $aQ->where('users.id', $user->id);
-                          });
+                            ->orWhereHas('assignees', function ($aQ) use ($user) {
+                                $aQ->where('users.id', $user->id);
+                            });
                     });
                 } else {
                     $query->whereHas('assignees', function ($aQ) use ($user) {
@@ -274,8 +274,8 @@ class TaskController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('task_name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('category', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('category', 'like', "%{$search}%");
             });
         }
 
@@ -401,6 +401,7 @@ class TaskController extends Controller
     public function startTimer(Request $request, $id)
     {
         $request->merge(['action' => 'start']);
+
         return $this->timerAction($request, $id);
     }
 
@@ -410,6 +411,7 @@ class TaskController extends Controller
     public function pauseTimer(Request $request, $id)
     {
         $request->merge(['action' => 'pause']);
+
         return $this->timerAction($request, $id);
     }
 
@@ -419,6 +421,7 @@ class TaskController extends Controller
     public function stopTimer(Request $request, $id)
     {
         $request->merge(['action' => 'stop']);
+
         return $this->timerAction($request, $id);
     }
 
@@ -460,6 +463,9 @@ class TaskController extends Controller
             $task->timer_started_at = null;
         }
 
+        $task->completed_at = $newStatus === 'Completed'
+            ? ($task->completed_at ?? Carbon::now())
+            : null;
         $task->status = $newStatus;
         $task->save();
 
@@ -645,6 +651,12 @@ class TaskController extends Controller
             'due_date',
             'estimated_hours',
         ]));
+
+        if ($request->has('status')) {
+            $task->completed_at = $request->input('status') === 'Completed'
+                ? ($task->completed_at ?? Carbon::now())
+                : null;
+        }
 
         $task->save();
 

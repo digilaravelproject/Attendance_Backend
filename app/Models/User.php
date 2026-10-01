@@ -41,6 +41,7 @@ class User extends Authenticatable
         'address',
         'avatar',
         'status',
+        'reporting_manager_id',
     ];
 
     /**
@@ -149,5 +150,35 @@ class User extends Authenticatable
     public function createdTasks()
     {
         return $this->hasMany(Task::class, 'created_by');
+    }
+
+    public function reportingManager()
+    {
+        return $this->belongsTo(User::class, 'reporting_manager_id');
+    }
+
+    public function directReports()
+    {
+        return $this->hasMany(User::class, 'reporting_manager_id');
+    }
+
+    public function sentPerformanceMessages()
+    {
+        return $this->hasMany(PerformanceMessage::class, 'sender_id');
+    }
+
+    public function receivedPerformanceMessages()
+    {
+        return $this->hasMany(PerformanceMessage::class, 'receiver_id');
+    }
+
+    public function qualityReviews()
+    {
+        return $this->hasMany(TaskQualityReview::class, 'employee_id');
+    }
+
+    public function submittedQualityReviews()
+    {
+        return $this->hasMany(TaskQualityReview::class, 'reviewer_id');
     }
 }
