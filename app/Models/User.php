@@ -140,4 +140,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Notification::class, 'actor_id');
     }
+
+    public function assignedTasks()
+    {
+        return $this->belongsToMany(Task::class, 'task_user')->withPivot('assigned_by')->withTimestamps();
+    }
+
+    public function createdTasks()
+    {
+        return $this->hasMany(Task::class, 'created_by');
+    }
 }

@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SalaryController;
 use App\Http\Controllers\Api\ShiftManagementController;
 use App\Http\Controllers\Api\ShiftRotationController;
+use App\Http\Controllers\Api\TaskController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -30,6 +31,33 @@ Route::prefix('admin')->group(function () {
     Route::post('/login', [AdminAuthController::class, 'login']);
     Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
+
+    /*
+    | Task APIs (No Middleware - Accessible to Admin/Manager/Employee)
+    */
+    Route::get('/tasks/employees', [TaskController::class, 'getEmployees']);
+    Route::get('/tasks/total', [TaskController::class, 'total']);
+    Route::get('/tasks', [TaskController::class, 'index']);
+    Route::post('/tasks', [TaskController::class, 'store']);
+    Route::get('/tasks/{id}', [TaskController::class, 'show'])->whereNumber('id');
+    Route::match(['put', 'patch'], '/tasks/{id}', [TaskController::class, 'update'])->whereNumber('id');
+    Route::post('/tasks/{id}', [TaskController::class, 'update'])->whereNumber('id');
+    Route::delete('/tasks/{id}', [TaskController::class, 'destroy'])->whereNumber('id');
+
+    Route::post('/tasks/{id}/timer', [TaskController::class, 'timerAction'])->whereNumber('id');
+    Route::post('/tasks/{id}/start', [TaskController::class, 'startTimer'])->whereNumber('id');
+    Route::post('/tasks/{id}/pause', [TaskController::class, 'pauseTimer'])->whereNumber('id');
+    Route::post('/tasks/{id}/stop', [TaskController::class, 'stopTimer'])->whereNumber('id');
+
+    Route::match(['post', 'patch', 'put'], '/tasks/{id}/status', [TaskController::class, 'updateStatus'])->whereNumber('id');
+    Route::post('/tasks/{id}/submit-for-testing', [TaskController::class, 'submitForTesting'])->whereNumber('id');
+
+    Route::post('/tasks/{id}/subtasks', [TaskController::class, 'addSubtask'])->whereNumber('id');
+    Route::match(['post', 'patch', 'put'], '/tasks/{id}/subtasks/{subtaskId}/toggle', [TaskController::class, 'toggleSubtask'])->whereNumber(['id', 'subtaskId']);
+    Route::delete('/tasks/{id}/subtasks/{subtaskId}', [TaskController::class, 'deleteSubtask'])->whereNumber(['id', 'subtaskId']);
+
+    Route::get('/tasks/{id}/comments', [TaskController::class, 'getComments'])->whereNumber('id');
+    Route::post('/tasks/{id}/comments', [TaskController::class, 'addComment'])->whereNumber('id');
 
     // Shared authenticated routes for administrators and employees.
     Route::middleware(['auth:sanctum', 'track.admin.action'])->group(function () {
@@ -215,3 +243,35 @@ Route::prefix('admin')->group(function () {
 
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| Top-level Task API Aliases (/api/tasks) - No Middleware
+|--------------------------------------------------------------------------
+*/
+Route::prefix('tasks')->group(function () {
+    Route::get('/employees', [TaskController::class, 'getEmployees']);
+    Route::get('/total', [TaskController::class, 'total']);
+    Route::get('/', [TaskController::class, 'index']);
+    Route::post('/', [TaskController::class, 'store']);
+    Route::get('/{id}', [TaskController::class, 'show'])->whereNumber('id');
+    Route::match(['put', 'patch'], '/{id}', [TaskController::class, 'update'])->whereNumber('id');
+    Route::post('/{id}', [TaskController::class, 'update'])->whereNumber('id');
+    Route::delete('/{id}', [TaskController::class, 'destroy'])->whereNumber('id');
+
+    Route::post('/{id}/timer', [TaskController::class, 'timerAction'])->whereNumber('id');
+    Route::post('/{id}/start', [TaskController::class, 'startTimer'])->whereNumber('id');
+    Route::post('/{id}/pause', [TaskController::class, 'pauseTimer'])->whereNumber('id');
+    Route::post('/{id}/stop', [TaskController::class, 'stopTimer'])->whereNumber('id');
+
+    Route::match(['post', 'patch', 'put'], '/{id}/status', [TaskController::class, 'updateStatus'])->whereNumber('id');
+    Route::post('/{id}/submit-for-testing', [TaskController::class, 'submitForTesting'])->whereNumber('id');
+
+    Route::post('/{id}/subtasks', [TaskController::class, 'addSubtask'])->whereNumber('id');
+    Route::match(['post', 'patch', 'put'], '/{id}/subtasks/{subtaskId}/toggle', [TaskController::class, 'toggleSubtask'])->whereNumber(['id', 'subtaskId']);
+    Route::delete('/{id}/subtasks/{subtaskId}', [TaskController::class, 'deleteSubtask'])->whereNumber(['id', 'subtaskId']);
+
+    Route::get('/{id}/comments', [TaskController::class, 'getComments'])->whereNumber('id');
+    Route::post('/{id}/comments', [TaskController::class, 'addComment'])->whereNumber('id');
+});
+
