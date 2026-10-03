@@ -463,29 +463,29 @@ class AdminAuthController extends Controller
             'department' => $role->department,
             'description' => $role->description,
             'status' => (bool) $role->status,
-            'permission_ids' => $role->permissions->pluck('id')->values()->all(),
+            // 'permission_ids' => $role->permissions->pluck('id')->values()->all(),
         ])->all();
         $permissions = $user->roles
             ->flatMap->permissions
             ->unique('id')
             ->sortBy([['module', 'asc'], ['name', 'asc']])
             ->values();
-        $data['permission_ids'] = $permissions->pluck('id')->all();
-        $data['permissions'] = $permissions->map(fn ($permission) => [
-            'id' => $permission->id,
-            'module' => $permission->module,
-            'module_slug' => $permission->module_slug,
-            'name' => $permission->name,
-            'action' => $permission->action,
-            'description' => $permission->description,
-        ])->all();
-        $data['permissions_by_module'] = $permissions
-            ->groupBy('module_slug')
-            ->map(fn ($items, $slug) => [
-                'module' => $items->first()->module,
-                'module_slug' => $slug,
-                'permissions' => $items->pluck('action')->values()->all(),
-            ])->values()->all();
+        // $data['permission_ids'] = $permissions->pluck('id')->all();
+        // $data['permissions'] = $permissions->map(fn ($permission) => [
+        //     'id' => $permission->id,
+        //     'module' => $permission->module,
+        //     'module_slug' => $permission->module_slug,
+        //     'name' => $permission->name,
+        //     'action' => $permission->action,
+        //     'description' => $permission->description,
+        // ])->all();
+        // $data['permissions_by_module'] = $permissions
+        //     ->groupBy('module_slug')
+        //     ->map(fn ($items, $slug) => [
+        //         'module' => $items->first()->module,
+        //         'module_slug' => $slug,
+        //         'permissions' => $items->pluck('action')->values()->all(),
+        //     ])->values()->all();
         $data['documents'] = $user->documents()
             ->latest()
             ->get()

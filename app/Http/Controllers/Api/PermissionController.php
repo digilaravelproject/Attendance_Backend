@@ -52,7 +52,7 @@ class PermissionController extends Controller
                     'module' => $perm->module,
                     'module_slug' => $slug,
                     'permissions' => [],
-                    'actions' => [],
+                    // 'actions' => [],
                 ];
             }
 
@@ -93,7 +93,7 @@ class PermissionController extends Controller
                 'id' => $perm->id,
                 'module' => $perm->module,
                 'module_slug' => $perm->module_slug,
-                'action' => $perm->action,
+                // 'action' => $perm->action,
                 'name' => $perm->name,
                 'description' => $perm->description,
                 'is_assigned' => $isAllowed,
@@ -115,7 +115,7 @@ class PermissionController extends Controller
             'total_categories' => count($groupedModules),
             'assigned_permissions_count' => count($assignedPermissionIds),
             'modules' => array_values($groupedModules),
-            'data' => $permissionsList,
+            // 'data' => $permissionsList,
         ], 200);
     }
 }
