@@ -250,7 +250,21 @@ class AdminAuthController extends Controller
     {
         $user = $request->user();
 
-        $validator = Validator::make($request->all(), [
+        // Keep `documents` as the canonical multipart field, but also accept the
+        // singular and previously misspelled field names used by older clients.
+        $documents = [];
+        foreach (['documents', 'document', 'documnts'] as $field) {
+            $uploads = $request->file($field, []);
+            $uploads = is_array($uploads) ? $uploads : [$uploads];
+            array_push($documents, ...array_filter($uploads));
+        }
+
+        $validationData = $request->all();
+        if ($documents !== []) {
+            $validationData['documents'] = $documents;
+        }
+
+        $validator = Validator::make($validationData, [
             'name' => 'sometimes|nullable|string|max:255',
             'owner_name' => 'sometimes|nullable|string|max:255',
             'company_name' => 'sometimes|nullable|string|max:255',
@@ -341,7 +355,7 @@ class AdminAuthController extends Controller
 
         $user->save();
 
-        foreach ($request->file('documents', []) as $document) {
+        foreach ($documents as $document) {
             $path = $document->store('admin-documents/'.$user->id, 'public');
             $user->documents()->create([
                 'original_name' => $document->getClientOriginalName(),
