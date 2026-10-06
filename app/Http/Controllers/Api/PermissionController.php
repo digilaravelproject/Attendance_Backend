@@ -32,7 +32,7 @@ class PermissionController extends Controller
 
         if ($roleId) {
             $role = Role::find($roleId);
-            if (!$role) {
+            if (! $role) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Role not found.',
@@ -47,7 +47,7 @@ class PermissionController extends Controller
         $groupedModules = [];
         foreach ($allPermissions as $perm) {
             $slug = $perm->module_slug;
-            if (!isset($groupedModules[$slug])) {
+            if (! isset($groupedModules[$slug])) {
                 $groupedModules[$slug] = [
                     'module' => $perm->module,
                     'module_slug' => $slug,
@@ -58,12 +58,6 @@ class PermissionController extends Controller
 
             $isAllowed = in_array($perm->id, $assignedPermissionIds);
 
-            $groupedModules[$slug]['actions'][$perm->action] = [
-                'id' => $perm->id,
-                'name' => $perm->name,
-                'status' => $isAllowed ? 'allowed' : 'not_allowed',
-                'allowed' => $isAllowed,
-            ];
             $groupedModules[$slug]['permissions'][] = [
                 'id' => $perm->id,
                 'name' => $perm->name,
@@ -89,6 +83,7 @@ class PermissionController extends Controller
         // Format flat permissions list
         $permissionsList = $allPermissions->map(function ($perm) use ($assignedPermissionIds) {
             $isAllowed = in_array($perm->id, $assignedPermissionIds);
+
             return [
                 'id' => $perm->id,
                 'module' => $perm->module,

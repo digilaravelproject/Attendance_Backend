@@ -95,6 +95,11 @@ class Task extends Model
         return $this->hasMany(TaskQualityReview::class);
     }
 
+    public function handovers()
+    {
+        return $this->hasMany(TaskHandover::class)->latest();
+    }
+
     /**
      * Compute real-time logged seconds including current running timer.
      */

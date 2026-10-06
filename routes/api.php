@@ -33,6 +33,10 @@ Route::prefix('admin')->group(function () {
     Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
 
+    // Public lookup APIs used by role/employee selectors.
+    Route::get('/employees/all-users', [EmployeeManagementController::class, 'allUsers']);
+    Route::get('/permissions', [PermissionController::class, 'index']);
+
     /*
     | Task APIs (No Middleware - Accessible to Admin/Manager/Employee)
     */
@@ -52,6 +56,7 @@ Route::prefix('admin')->group(function () {
 
     Route::match(['post', 'patch', 'put'], '/tasks/{id}/status', [TaskController::class, 'updateStatus'])->whereNumber('id');
     Route::post('/tasks/{id}/submit-for-testing', [TaskController::class, 'submitForTesting'])->whereNumber('id');
+    Route::post('/tasks/{id}/handover', [TaskController::class, 'handover'])->whereNumber('id');
 
     Route::post('/tasks/{id}/subtasks', [TaskController::class, 'addSubtask'])->whereNumber('id');
     Route::match(['post', 'patch', 'put'], '/tasks/{id}/subtasks/{subtaskId}/toggle', [TaskController::class, 'toggleSubtask'])->whereNumber(['id', 'subtaskId']);
@@ -98,6 +103,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/leave-requests/{id}/reject', [LeaveManagementController::class, 'reject'])->whereNumber('id');
         Route::get('/leave-types', [LeaveManagementController::class, 'leaveTypes']);
         Route::get('/holidays', [LeaveManagementController::class, 'holidays']);
+        Route::get('/birthdays/upcoming', [EmployeeAttendanceController::class, 'upcomingBirthdays']);
 
         // Dynamic performance APIs. Visibility is enforced in the controller:
         // admin = all employees, manager = self/direct reports, employee = self.
@@ -136,7 +142,6 @@ Route::prefix('admin')->group(function () {
         Route::post('/attendance/check-out', [EmployeeAttendanceController::class, 'checkOut']);
         Route::post('/attendance/mark', [EmployeeAttendanceController::class, 'checkIn']);
         Route::post('/attendance/mark-logout', [EmployeeAttendanceController::class, 'checkOut']);
-        Route::get('/birthdays/upcoming', [EmployeeAttendanceController::class, 'upcomingBirthdays']);
         Route::get('/attendance/history', [EmployeeAttendanceController::class, 'history']);
         Route::get('/salary-history', [SalaryController::class, 'myHistory']);
         Route::get('/salaries/my-history', [SalaryController::class, 'myHistory']);
@@ -174,7 +179,6 @@ Route::prefix('admin')->group(function () {
 
         // Employees (stored in users with role=employee)
         Route::get('/employees/search', [EmployeeManagementController::class, 'search']);
-        Route::get('/employees/all-users', [EmployeeManagementController::class, 'allUsers']);
         Route::get('/employees/leaves', [LeaveManagementController::class, 'allEmployeeLeaves']);
         Route::get('/employees/leave-reports', [LeaveManagementController::class, 'allEmployeeReports']);
         Route::get('/employees', [EmployeeManagementController::class, 'index']);
@@ -193,7 +197,6 @@ Route::prefix('admin')->group(function () {
 
         // Permission APIs (Requirement 2 & Screenshot 1)
         Route::get('/permissions/total', [PermissionController::class, 'total']);
-        Route::get('/permissions', [PermissionController::class, 'index']);
         Route::get('/permissions/{role_id}', [PermissionController::class, 'index'])->whereNumber('role_id');
         Route::get('/roles/{id}/permissions', [PermissionController::class, 'index']);
 
@@ -281,6 +284,7 @@ Route::prefix('tasks')->group(function () {
 
     Route::match(['post', 'patch', 'put'], '/{id}/status', [TaskController::class, 'updateStatus'])->whereNumber('id');
     Route::post('/{id}/submit-for-testing', [TaskController::class, 'submitForTesting'])->whereNumber('id');
+    Route::post('/{id}/handover', [TaskController::class, 'handover'])->whereNumber('id');
 
     Route::post('/{id}/subtasks', [TaskController::class, 'addSubtask'])->whereNumber('id');
     Route::match(['post', 'patch', 'put'], '/{id}/subtasks/{subtaskId}/toggle', [TaskController::class, 'toggleSubtask'])->whereNumber(['id', 'subtaskId']);

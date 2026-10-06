@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Task;
 use App\Models\TaskAttachment;
 use App\Models\TaskComment;
+use App\Models\TaskHandover;
 use App\Models\TaskSubtask;
 use App\Models\TaskTimeLog;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class TaskController extends Controller
@@ -492,6 +494,9 @@ class TaskController extends Controller
             'attachments.uploader:id,name,email',
             'timeLogs.user:id,name,email',
             'testingSubmittedBy:id,name,email',
+            'handovers.fromUser:id,name,email,avatar,role,designation',
+            'handovers.toUser:id,name,email,avatar,role,designation',
+            'handovers.handedOverBy:id,name,email,avatar,role,designation',
         ])->find($id);
 
         if (! $task) {
@@ -782,6 +787,124 @@ class TaskController extends Controller
             'message' => 'Task submitted for testing successfully',
             'data' => $task,
         ]);
+    }
+
+    /**
+     * Pass an assigned task to another active team member and retain an audit trail.
+     */
+    public function handover(Request $request, $id)
+    {
+        $task = Task::with('assignees:id')->find($id);
+
+        if (! $task) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Task not found',
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'to_user_id' => ['required', 'integer', 'exists:users,id'],
+            'from_user_id' => ['sometimes', 'integer', 'exists:users,id'],
+            'reason' => ['required', 'string', 'max:2000'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $actor = auth('sanctum')->user() ?? $request->user();
+        if (! $actor) {
+            $actorId = $request->header('X-User-Id') ?? $request->input('user_id');
+            $actor = $actorId ? User::find($actorId) : null;
+        }
+        $assignedIds = $task->assignees->pluck('id');
+        $fromUserId = $request->filled('from_user_id')
+            ? $request->integer('from_user_id')
+            : ($actor && $assignedIds->contains($actor->id)
+                ? $actor->id
+                : ($assignedIds->count() === 1 ? $assignedIds->first() : null));
+        $toUserId = $request->integer('to_user_id');
+
+        if (! $fromUserId || ! $assignedIds->contains($fromUserId)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'The task is not assigned to the selected source user.',
+                'errors' => ['from_user_id' => ['Select a current assignee to hand the task over from.']],
+            ], 422);
+        }
+
+        if ($fromUserId === $toUserId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'The task must be handed over to a different user.',
+                'errors' => ['to_user_id' => ['The destination user must be different from the source user.']],
+            ], 422);
+        }
+
+        $destination = User::find($toUserId);
+        if (! $destination || strtolower((string) $destination->status) === 'inactive') {
+            return response()->json([
+                'status' => false,
+                'message' => 'The selected destination user is inactive.',
+                'errors' => ['to_user_id' => ['Select an active user.']],
+            ], 422);
+        }
+
+        $handover = DB::transaction(function () use ($request, $task, $actor, $fromUserId, $toUserId) {
+            if ($task->is_timer_running && $task->timer_started_at) {
+                $now = Carbon::now();
+                $startedAt = $task->timer_started_at->copy();
+                $elapsed = $startedAt->diffInSeconds($now);
+                $task->total_logged_seconds += $elapsed;
+                $task->is_timer_running = false;
+                $task->timer_started_at = null;
+                $task->save();
+
+                TaskTimeLog::create([
+                    'task_id' => $task->id,
+                    'user_id' => $fromUserId,
+                    'action' => 'stop',
+                    'started_at' => $startedAt,
+                    'stopped_at' => $now,
+                    'duration_seconds' => $elapsed,
+                    'note' => 'Timer stopped automatically during task handover.',
+                ]);
+            }
+
+            $task->assignees()->detach($fromUserId);
+            $task->assignees()->syncWithoutDetaching([
+                $toUserId => ['assigned_by' => $actor?->id ?? $fromUserId],
+            ]);
+
+            return TaskHandover::create([
+                'task_id' => $task->id,
+                'from_user_id' => $fromUserId,
+                'to_user_id' => $toUserId,
+                'handed_over_by' => $actor?->id ?? $fromUserId,
+                'reason' => trim((string) $request->input('reason')),
+            ]);
+        });
+
+        $task->load(['project', 'creator:id,name,email,avatar,role', 'assignees:id,name,email,avatar,role,designation']);
+        $handover->load([
+            'fromUser:id,name,email,avatar,role,designation',
+            'toUser:id,name,email,avatar,role,designation',
+            'handedOverBy:id,name,email,avatar,role,designation',
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Task handed over successfully',
+            'data' => [
+                'task' => $task,
+                'handover' => $handover,
+            ],
+        ], 201);
     }
 
     /**

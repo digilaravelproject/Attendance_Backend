@@ -35,6 +35,7 @@ class User extends Authenticatable
         'designation',
         'designation_id',
         'employee_id',
+        'date_of_birth',
         'date_of_joining',
         'monthly_salary',
         'skills',
