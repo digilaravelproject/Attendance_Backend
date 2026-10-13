@@ -2,6 +2,13 @@
 
 return [
 
+    'website_leads' => [
+        'url' => env('WEBSITE_LEADS_URL', 'https://digiemperor.com/wp-json/custom-api/v1/leads'),
+        'per_page' => env('WEBSITE_LEADS_PER_PAGE', 50),
+        'max_pages' => env('WEBSITE_LEADS_MAX_PAGES', 100),
+        'timeout' => env('WEBSITE_LEADS_TIMEOUT', 30),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

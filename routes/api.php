@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\DesignationManagementController;
 use App\Http\Controllers\Api\EmployeeAttendanceController;
 use App\Http\Controllers\Api\EmployeeManagementController;
+use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\LeaveManagementController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PerformanceController;
@@ -149,6 +150,14 @@ Route::prefix('admin')->group(function () {
 
     // Protected routes (Sanctum Auth Token Required)
     Route::middleware(['auth:sanctum', 'admin', 'track.admin.action'])->group(function () {
+        // CRM lead hub.
+        Route::get('/leads/search', [LeadController::class, 'search']);
+        Route::get('/leads/sales-employees', [LeadController::class, 'salesEmployees']);
+        Route::get('/leads', [LeadController::class, 'index']);
+        Route::post('/leads', [LeadController::class, 'store']);
+        Route::get('/leads/{lead}', [LeadController::class, 'show'])->whereNumber('lead');
+        Route::post('/leads/{lead}/assign', [LeadController::class, 'assign'])->whereNumber('lead');
+
         // Admin dashboard module counts and employee-notification administration.
         Route::get('/modules/statistics', [AdminDashboardController::class, 'moduleStatistics']);
         Route::get('/module-statistics', [AdminDashboardController::class, 'moduleStatistics']);
