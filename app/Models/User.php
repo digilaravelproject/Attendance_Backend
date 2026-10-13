@@ -173,6 +173,11 @@ class User extends Authenticatable
         return $this->hasMany(LeadHistory::class, 'actor_id');
     }
 
+    public function createdLeads()
+    {
+        return $this->hasMany(Lead::class, 'created_by');
+    }
+
     public function sentPerformanceMessages()
     {
         return $this->hasMany(PerformanceMessage::class, 'sender_id');

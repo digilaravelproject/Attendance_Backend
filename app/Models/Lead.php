@@ -11,11 +11,14 @@ class Lead extends Model
 
     public const SOURCES = ['website', 'google_ads', 'facebook_ads', 'justdial', 'referral'];
 
-    public const STATUSES = ['new', 'interested', 'contacted', 'qualified', 'proposal_sent', 'converted', 'lost'];
+    public const STATUSES = [
+        'new', 'interested', 'follow_up', 'pending_call', 'contacted', 'qualified',
+        'proposal_sent', 'converted', 'unreachable', 'wrong_number', 'lost',
+    ];
 
     protected $fillable = [
         'lead_code', 'source', 'external_id', 'full_name', 'company_name', 'email',
-        'mobile_number', 'designation', 'requirement', 'status', 'assigned_to',
+        'mobile_number', 'designation', 'requirement', 'status', 'assigned_to', 'created_by',
         'location', 'estimated_value', 'expected_closing_date', 'notes',
         'source_payload', 'source_created_at', 'last_synced_at',
     ];
@@ -36,8 +39,20 @@ class Lead extends Model
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     public function histories()
     {
         return $this->hasMany(LeadHistory::class)->orderBy('occurred_at')->orderBy('id');
+    }
+
+    public function latestAssignment()
+    {
+        return $this->hasOne(LeadHistory::class)
+            ->whereIn('event_type', ['assigned', 'reassigned'])
+            ->latestOfMany('occurred_at');
     }
 }

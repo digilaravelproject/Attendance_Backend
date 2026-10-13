@@ -168,7 +168,7 @@ class LeadController extends Controller
         }
 
         $lead = DB::transaction(function () use ($request, $validated, $employee) {
-            $lead = Lead::create($validated);
+            $lead = Lead::create([...$validated, 'created_by' => $request->user()->id]);
             $lead->update(['lead_code' => 'LD-'.str_pad((string) (1000 + $lead->id), 4, '0', STR_PAD_LEFT)]);
             $lead->histories()->create([
                 'actor_id' => $request->user()->id,
@@ -257,8 +257,8 @@ class LeadController extends Controller
             'full_name' => $request->input('full_name', $request->input('name')),
             'mobile_number' => $request->input('mobile_number', $request->input('phone')),
             'assigned_to' => $request->input('assigned_to', $request->input('assign_to')),
-            'source' => is_string($source) ? Str::snake(Str::lower(trim($source))) : $source,
-            'status' => is_string($status) ? Str::snake(Str::lower(trim($status))) : $status,
+            'source' => is_string($source) ? Str::of($source)->trim()->lower()->replace(['-', ' '], '_')->replaceMatches('/_+/', '_')->value() : $source,
+            'status' => is_string($status) ? Str::of($status)->trim()->lower()->replace(['-', ' '], '_')->replaceMatches('/_+/', '_')->value() : $status,
         ]);
     }
 

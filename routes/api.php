@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AssignedShiftController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\DesignationManagementController;
 use App\Http\Controllers\Api\EmployeeAttendanceController;
+use App\Http\Controllers\Api\EmployeeLeadController;
 use App\Http\Controllers\Api\EmployeeManagementController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\LeaveManagementController;
@@ -269,6 +270,21 @@ Route::prefix('admin')->group(function () {
         Route::delete('/holidays/{id}', [LeaveManagementController::class, 'destroyHoliday'])->whereNumber('id');
 
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Employee Sales CRM API Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('employee')->middleware(['auth:sanctum', 'employee'])->group(function () {
+    Route::get('/leads/search', [EmployeeLeadController::class, 'search']);
+    Route::get('/leads/sales-employees', [EmployeeLeadController::class, 'salesEmployees']);
+    Route::get('/leads', [EmployeeLeadController::class, 'index']);
+    Route::post('/leads', [EmployeeLeadController::class, 'store']);
+    Route::get('/leads/{lead}', [EmployeeLeadController::class, 'show'])->whereNumber('lead');
+    Route::post('/leads/{lead}/assign', [EmployeeLeadController::class, 'assign'])->whereNumber('lead');
+    Route::match(['put', 'patch', 'post'], '/leads/{lead}/status', [EmployeeLeadController::class, 'updateStatus'])->whereNumber('lead');
 });
 
 /*
