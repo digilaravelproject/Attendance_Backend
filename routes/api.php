@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\DesignationManagementController;
 use App\Http\Controllers\Api\EmployeeAttendanceController;
 use App\Http\Controllers\Api\EmployeeLeadController;
 use App\Http\Controllers\Api\EmployeeManagementController;
+use App\Http\Controllers\Api\FacebookAuthController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\LeaveManagementController;
 use App\Http\Controllers\Api\NotificationController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Api\SalaryController;
 use App\Http\Controllers\Api\ShiftManagementController;
 use App\Http\Controllers\Api\ShiftRotationController;
 use App\Http\Controllers\Api\TaskController;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,7 +29,10 @@ use Illuminate\Support\Facades\Route;
 | Admin / Manager API Routes
 |--------------------------------------------------------------------------
 */
-
+Route::prefix('facebook')->middleware(StartSession::class)->group(function () {
+    Route::post('/authorization-url', [FacebookAuthController::class, 'generateAuthorizationUrl']);
+    Route::match(['get', 'post'], '/callback', [FacebookAuthController::class, 'callback']);
+});
 Route::prefix('admin')->group(function () {
     // Public routes
     Route::post('/signup', [AdminAuthController::class, 'signup']);

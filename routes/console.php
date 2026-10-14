@@ -11,3 +11,7 @@ Artisan::command('inspire', function () {
 Schedule::command('leads:sync-website')
     ->everyTwoMinutes()
     ->withoutOverlapping();
+
+Schedule::command('leads:sync-facebook')
+    ->everyTwoMinutes()
+    ->withoutOverlapping();

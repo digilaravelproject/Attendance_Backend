@@ -2,6 +2,15 @@
 
 return [
 
+    'facebook' => [
+        'authorization_url' => env('FACEBOOK_AUTHORIZATION_URL', 'https://www.facebook.com/v26.0/dialog/oauth'),
+        'graph_url' => env('FACEBOOK_GRAPH_URL', 'https://graph.facebook.com/v26.0'),
+        'page_name' => env('FACEBOOK_PAGE_NAME', 'Digi Emperor-Digital Marketing Agency'),
+        'scopes' => ['pages_show_list', 'pages_read_engagement', 'leads_retrieval'],
+        'timeout' => env('FACEBOOK_TIMEOUT', 30),
+        'max_pages' => env('FACEBOOK_MAX_PAGES', 100),
+    ],
+
     'website_leads' => [
         'url' => env('WEBSITE_LEADS_URL', 'https://digiemperor.com/wp-json/custom-api/v1/leads'),
         'per_page' => env('WEBSITE_LEADS_PER_PAGE', 50),
