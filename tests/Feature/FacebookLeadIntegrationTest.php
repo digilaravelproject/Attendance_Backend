@@ -32,6 +32,11 @@ class FacebookLeadIntegrationTest extends TestCase
         $this->assertSame('facebook-client-secret', $integration->client_secret);
         $this->assertNotSame('facebook-client-secret', $integration->getRawOriginal('client_secret'));
         $this->assertSame($integration->id, session('facebook_oauth.integration_id'));
+        $this->assertSame('https://attendance.digiemperor.com/api/facebook/callback', $integration->redirect_uri);
+        $this->assertStringContainsString(
+            urlencode('https://attendance.digiemperor.com/api/facebook/callback'),
+            $response->json('authorization_url')
+        );
     }
 
     public function test_callback_exchanges_code_selects_page_imports_lead_and_remains_idempotent(): void
@@ -80,7 +85,7 @@ class FacebookLeadIntegrationTest extends TestCase
         $this->assertSame('page-token', $integration->page_access_token);
         $this->assertNotSame('page-token', $integration->getRawOriginal('page_access_token'));
         $this->assertDatabaseHas('leads', [
-            'source' => 'facebook_ads',
+            'source' => 'facebook',
             'external_id' => '1071795159020032',
             'full_name' => 'Test Person',
             'email' => 'test@meta.com',

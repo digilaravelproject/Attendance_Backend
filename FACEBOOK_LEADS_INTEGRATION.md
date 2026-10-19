@@ -11,6 +11,7 @@ Add these values to `.env`:
 ```dotenv
 FACEBOOK_AUTHORIZATION_URL=https://www.facebook.com/v26.0/dialog/oauth
 FACEBOOK_GRAPH_URL=https://graph.facebook.com/v26.0
+FACEBOOK_REDIRECT_URI=https://attendance.digiemperor.com/api/facebook/callback
 FACEBOOK_PAGE_NAME="Digi Emperor-Digital Marketing Agency"
 FACEBOOK_TIMEOUT=30
 FACEBOOK_MAX_PAGES=100
@@ -22,9 +23,9 @@ Run the migration:
 php artisan migrate
 ```
 
-In the Meta developer console, add the exact callback URL used by the mobile
-application to **Valid OAuth Redirect URIs**. It must be HTTPS and must match the
-`redirect_uri` sent to the backend exactly, including path and trailing slash.
+In the Meta developer console, add
+`https://attendance.digiemperor.com/api/facebook/callback` to **Valid OAuth
+Redirect URIs**. It must match exactly, including path and trailing slash.
 
 ## Mobile authorization flow
 
@@ -37,7 +38,7 @@ curl --request POST "https://your-api.example.com/api/facebook/authorization-url
   --data '{
     "client_id": "YOUR_META_APP_ID",
     "client_secret": "YOUR_META_APP_SECRET",
-    "redirect_uri": "https://your-api.example.com/api/facebook/callback",
+    "redirect_uri": "https://attendance.digiemperor.com/api/facebook/callback",
     "state": "optional-mobile-reference"
   }'
 ```
@@ -52,10 +53,11 @@ with the supplied API flow.
 
 ### 2. Complete the callback
 
-Recommended: use the backend endpoint itself as `redirect_uri`. Facebook calls:
+The backend always uses `FACEBOOK_REDIRECT_URI`, even if an old client sends the
+Postman callback URL. Facebook calls:
 
 ```text
-GET https://your-api.example.com/api/facebook/callback?code=...&state=...
+GET https://attendance.digiemperor.com/api/facebook/callback?code=...&state=...
 ```
 
 That one callback automatically:
@@ -92,7 +94,7 @@ value, as required by Facebook.
 | Complete response | `source_payload` |
 | `created_time` | `source_created_at` |
 
-The lead source is `facebook_ads`. The unique database constraint on
+The lead source is `facebook`. The unique database constraint on
 `(source, external_id)` prevents duplicate inserts. A repeated sync refreshes
 the existing record without adding another lead or another captured-history
 entry.
@@ -128,7 +130,7 @@ php artisan leads:sync-facebook --integration=1
 2. Confirm the two-minute entry with `php artisan schedule:list`.
 3. Generate an authorization URL and complete Facebook login in the WebView.
 4. Confirm the callback response names the expected page and reports sync counts.
-5. Query `GET /api/admin/leads?source=facebook_ads` with an admin Bearer token.
+5. Query `GET /api/admin/leads?source=facebook` with an admin Bearer token.
 6. Run `php artisan leads:sync-facebook` twice. The second run may report the
    lead as refreshed, but the database lead count must not increase.
 7. Inspect `storage/logs/laravel.log` and the integration's `last_error` if a

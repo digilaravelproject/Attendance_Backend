@@ -5,6 +5,7 @@ return [
     'facebook' => [
         'authorization_url' => env('FACEBOOK_AUTHORIZATION_URL', 'https://www.facebook.com/v26.0/dialog/oauth'),
         'graph_url' => env('FACEBOOK_GRAPH_URL', 'https://graph.facebook.com/v26.0'),
+        'redirect_uri' => env('FACEBOOK_REDIRECT_URI', 'https://attendance.digiemperor.com/api/facebook/callback'),
         'page_name' => env('FACEBOOK_PAGE_NAME', 'Digi Emperor-Digital Marketing Agency'),
         'scopes' => ['pages_show_list', 'pages_read_engagement', 'leads_retrieval'],
         'timeout' => env('FACEBOOK_TIMEOUT', 30),

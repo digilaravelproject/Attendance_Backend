@@ -154,9 +154,9 @@ class FacebookLeadSyncService
         $externalId = (string) $payload['id'];
 
         return DB::transaction(function () use ($payload, $form, $integration, $fields, $externalId) {
-            $lead = Lead::where('source', 'facebook_ads')->where('external_id', $externalId)->first();
+            $lead = Lead::where('source', 'facebook')->where('external_id', $externalId)->first();
             $isNew = ! $lead;
-            $lead ??= new Lead(['source' => 'facebook_ads', 'external_id' => $externalId]);
+            $lead ??= new Lead(['source' => 'facebook', 'external_id' => $externalId]);
 
             $lead->fill([
                 'full_name' => $this->value($fields, ['full_name', 'name']) ?: 'Facebook Lead',

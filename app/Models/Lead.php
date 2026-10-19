@@ -9,7 +9,7 @@ class Lead extends Model
 {
     use HasFactory;
 
-    public const SOURCES = ['website', 'google_ads', 'facebook_ads', 'justdial', 'referral'];
+    public const SOURCES = ['website', 'google_ads', 'facebook', 'justdial', 'referral'];
 
     public const STATUSES = [
         'new', 'interested', 'follow_up', 'pending_call', 'contacted', 'qualified',

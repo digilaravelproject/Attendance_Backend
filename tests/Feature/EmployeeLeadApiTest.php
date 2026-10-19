@@ -17,7 +17,7 @@ class EmployeeLeadApiTest extends TestCase
         [$salesOne, $salesTwo, $admin] = $this->users();
         $assigned = Lead::create([
             'lead_code' => 'TC-201',
-            'source' => 'facebook_ads',
+            'source' => 'facebook',
             'full_name' => 'Rajesh Agrawal',
             'mobile_number' => '9823044556',
             'location' => 'Mumbai',

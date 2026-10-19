@@ -18,9 +18,13 @@ class FacebookAuthController extends Controller
         $validated = $request->validate([
             'client_id' => ['required', 'string', 'max:255'],
             'client_secret' => ['required', 'string', 'max:255'],
-            'redirect_uri' => ['required', 'url', 'max:2048'],
+            'redirect_uri' => ['sometimes', 'nullable', 'url', 'max:2048'],
             'state' => ['sometimes', 'nullable', 'string', 'max:255'],
         ]);
+
+        // Meta must return to the backend so it can exchange the code and import leads.
+        // Do not allow Postman or a mobile deep link to bypass this callback.
+        $redirectUri = (string) config('services.facebook.redirect_uri');
 
         // Always use an unguessable OAuth state. The caller's state is retained separately.
         $state = Str::random(64);
@@ -29,12 +33,12 @@ class FacebookAuthController extends Controller
             'client_state' => $validated['state'] ?? null,
             'client_id' => $validated['client_id'],
             'client_secret' => $validated['client_secret'],
-            'redirect_uri' => $validated['redirect_uri'],
+            'redirect_uri' => $redirectUri,
         ]);
 
         $queryParams = [
             'client_id' => $validated['client_id'],
-            'redirect_uri' => $validated['redirect_uri'],
+            'redirect_uri' => $redirectUri,
             'response_type' => 'code',
             'scope' => implode(',', config('services.facebook.scopes')),
             'state' => $state,
