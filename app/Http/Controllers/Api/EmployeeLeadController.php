@@ -30,10 +30,11 @@ class EmployeeLeadController extends Controller
         }
 
         $this->normalizeStatusFilter($request);
+        $this->normalizeSourceFilter($request);
         $validated = $request->validate([
             'q' => ['sometimes', 'nullable', 'string', 'max:255'],
             'status' => ['sometimes', 'nullable', Rule::exists('lead_statuses', 'slug')],
-            'source' => ['sometimes', 'nullable', Rule::in(Lead::SOURCES)],
+            'source' => ['sometimes', 'nullable', Rule::in([...Lead::SOURCES, 'all_channels'])],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ]);
 
@@ -59,7 +60,7 @@ class EmployeeLeadController extends Controller
         if (! empty($validated['status'])) {
             $query->where('status', $validated['status']);
         }
-        if (! empty($validated['source'])) {
+        if (! empty($validated['source']) && $validated['source'] !== 'all_channels') {
             $query->where('source', $validated['source']);
         }
 
@@ -395,6 +396,16 @@ class EmployeeLeadController extends Controller
         if ($request->filled('status')) {
             $request->merge(['status' => $this->normalizeChoice((string) $request->input('status'))]);
         }
+    }
+
+    private function normalizeSourceFilter(Request $request): void
+    {
+        if (! $request->filled('source')) {
+            return;
+        }
+
+        $source = $this->normalizeChoice((string) $request->input('source'));
+        $request->merge(['source' => $source === 'all' ? 'all_channels' : $source]);
     }
 
     private function normalizeChoice(string $value): string

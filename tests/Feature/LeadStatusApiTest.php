@@ -100,7 +100,7 @@ class LeadStatusApiTest extends TestCase
             'authorized_at' => now(),
         ]);
         Lead::create([
-            'source' => 'google_ads',
+            'source' => 'google',
             'external_id' => 'google-1',
             'full_name' => 'Google Lead',
         ]);

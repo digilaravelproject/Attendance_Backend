@@ -97,6 +97,23 @@ class LeadApiTest extends TestCase
             ->assertJsonPath('data.history.1.event_type', 'assigned');
     }
 
+    public function test_admin_can_list_all_channels_without_source_filtering(): void
+    {
+        [$admin] = $this->users();
+        Lead::create(['source' => 'website', 'external_id' => 'web-1', 'full_name' => 'Website Lead']);
+        Lead::create(['source' => 'facebook', 'external_id' => 'fb-1', 'full_name' => 'Facebook Lead']);
+        Lead::create(['source' => 'justdial', 'external_id' => 'jd-1', 'full_name' => 'Justdial Lead']);
+
+        $this->actingAs($admin)->getJson('/api/admin/leads?page=1&per_page=20&source=all_channels')
+            ->assertOk()
+            ->assertJsonPath('pagination.total', 3)
+            ->assertJsonCount(3, 'data');
+
+        $this->actingAs($admin)->getJson('/api/admin/leads?source=All%20Channels')
+            ->assertOk()
+            ->assertJsonPath('pagination.total', 3);
+    }
+
     public function test_admin_can_create_a_referral_lead(): void
     {
         [$admin, $salesperson] = $this->users();

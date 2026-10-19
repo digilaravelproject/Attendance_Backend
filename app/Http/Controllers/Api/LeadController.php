@@ -16,9 +16,10 @@ class LeadController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $this->normalizeSourceFilter($request);
         $validated = $request->validate([
             'q' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'source' => ['sometimes', 'nullable', Rule::in(Lead::SOURCES)],
+            'source' => ['sometimes', 'nullable', Rule::in([...Lead::SOURCES, 'all_channels'])],
             'assignment' => ['sometimes', 'nullable', Rule::in(['all', 'assigned', 'unassigned'])],
             'status' => ['sometimes', 'nullable', Rule::exists('lead_statuses', 'slug')],
             'assigned_to' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
@@ -209,7 +210,7 @@ class LeadController extends Controller
                     ->orWhere('requirement', 'like', $term);
             });
         }
-        if (! empty($filters['source'])) {
+        if (! empty($filters['source']) && $filters['source'] !== 'all_channels') {
             $query->where('source', $filters['source']);
         }
         if (! empty($filters['status'])) {
@@ -262,6 +263,17 @@ class LeadController extends Controller
             'source' => is_string($source) ? Str::of($source)->trim()->lower()->replace(['-', ' '], '_')->replaceMatches('/_+/', '_')->value() : $source,
             'status' => is_string($status) ? Str::of($status)->trim()->lower()->replace(['-', ' '], '_')->replaceMatches('/_+/', '_')->value() : $status,
         ]);
+    }
+
+    private function normalizeSourceFilter(Request $request): void
+    {
+        if (! $request->filled('source')) {
+            return;
+        }
+
+        $source = Str::of((string) $request->input('source'))
+            ->trim()->lower()->replace(['-', ' '], '_')->replaceMatches('/_+/', '_')->value();
+        $request->merge(['source' => $source === 'all' ? 'all_channels' : $source]);
     }
 
     private function leadData(Lead $lead): array

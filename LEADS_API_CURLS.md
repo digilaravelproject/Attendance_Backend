@@ -32,7 +32,7 @@ curl --location --request GET '{{base_url}}/api/admin/leads?assignment=unassigne
   --header 'Authorization: Bearer {{admin_access_token}}'
 ```
 
-Filters: `assignment=all|assigned|unassigned`, `source=website|google_ads|facebook|justdial|referral`, any `status` slug returned by `GET /api/admin/lead-statuses`, `assigned_to=ID`, and `per_page=1..100`.
+Filters: `assignment=all|assigned|unassigned`, `source=all_channels|website|google|facebook|justdial|referral`, any `status` slug returned by `GET /api/admin/lead-statuses`, `assigned_to=ID`, and `per_page=1..100`.
 
 ## 2. Search leads
 

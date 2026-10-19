@@ -42,7 +42,7 @@ class LeadIntegrationStatusController extends Controller
                     'connected' => false,
                     'status' => 'not_configured',
                     'message' => 'Google Ads OAuth integration is not configured in this backend.',
-                    'imported_leads_count' => Lead::where('source', 'google_ads')->count(),
+                    'imported_leads_count' => Lead::where('source', 'google')->count(),
                 ],
             ],
         ]);
