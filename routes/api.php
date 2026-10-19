@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\EmployeeManagementController;
 use App\Http\Controllers\Api\FacebookAuthController;
 use App\Http\Controllers\Api\JustdialLeadController;
 use App\Http\Controllers\Api\LeadController;
+use App\Http\Controllers\Api\LeadIntegrationStatusController;
+use App\Http\Controllers\Api\LeadStatusController;
 use App\Http\Controllers\Api\LeaveManagementController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PerformanceController;
@@ -159,6 +161,14 @@ Route::prefix('admin')->group(function () {
     // Protected routes (Sanctum Auth Token Required)
     Route::middleware(['auth:sanctum', 'admin', 'track.admin.action'])->group(function () {
         // CRM lead hub.
+        Route::get('/lead-statuses/total', [LeadStatusController::class, 'total']);
+        Route::get('/lead-statuses', [LeadStatusController::class, 'index']);
+        Route::post('/lead-statuses', [LeadStatusController::class, 'store']);
+        Route::get('/lead-statuses/{leadStatus}', [LeadStatusController::class, 'show'])->whereNumber('leadStatus');
+        Route::match(['put', 'patch'], '/lead-statuses/{leadStatus}', [LeadStatusController::class, 'update'])->whereNumber('leadStatus');
+        Route::delete('/lead-statuses/{leadStatus}', [LeadStatusController::class, 'destroy'])->whereNumber('leadStatus');
+        Route::get('/lead-integrations/status', [LeadIntegrationStatusController::class, 'show']);
+
         Route::get('/leads/search', [LeadController::class, 'search']);
         Route::get('/leads/sales-employees', [LeadController::class, 'salesEmployees']);
         Route::get('/leads', [LeadController::class, 'index']);

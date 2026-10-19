@@ -32,7 +32,7 @@ class EmployeeLeadController extends Controller
         $this->normalizeStatusFilter($request);
         $validated = $request->validate([
             'q' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'status' => ['sometimes', 'nullable', Rule::in(Lead::STATUSES)],
+            'status' => ['sometimes', 'nullable', Rule::exists('lead_statuses', 'slug')],
             'source' => ['sometimes', 'nullable', Rule::in(Lead::SOURCES)],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ]);
@@ -78,6 +78,8 @@ class EmployeeLeadController extends Controller
                 'unreachable' => (clone $base)->where('status', 'unreachable')->count(),
                 'wrong_number' => (clone $base)->where('status', 'wrong_number')->count(),
                 'converted_revenue' => (float) (clone $base)->where('status', 'converted')->sum('estimated_value'),
+                'by_status' => (clone $base)->selectRaw('status, COUNT(*) as total')
+                    ->groupBy('status')->pluck('total', 'status'),
             ],
             'data' => collect($paginator->items())
                 ->map(fn (Lead $lead) => $this->leadData($lead, $request->user()))
@@ -112,7 +114,7 @@ class EmployeeLeadController extends Controller
             'mobile_number' => ['required', 'string', 'regex:/^[0-9+() -]{7,20}$/'],
             'designation' => ['sometimes', 'nullable', 'string', 'max:255'],
             'source' => ['required', Rule::in(Lead::SOURCES)],
-            'status' => ['required', Rule::in(Lead::STATUSES)],
+            'status' => ['required', Rule::exists('lead_statuses', 'slug')],
             'assigned_to' => ['required', 'integer', 'exists:users,id'],
             'requirement' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'location' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -298,7 +300,7 @@ class EmployeeLeadController extends Controller
 
         $this->normalizeInput($request);
         $validated = $request->validate([
-            'status' => ['required', Rule::in(Lead::STATUSES)],
+            'status' => ['required', Rule::exists('lead_statuses', 'slug')],
             'call_note' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
         ]);

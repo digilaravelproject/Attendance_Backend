@@ -20,7 +20,7 @@ class LeadController extends Controller
             'q' => ['sometimes', 'nullable', 'string', 'max:255'],
             'source' => ['sometimes', 'nullable', Rule::in(Lead::SOURCES)],
             'assignment' => ['sometimes', 'nullable', Rule::in(['all', 'assigned', 'unassigned'])],
-            'status' => ['sometimes', 'nullable', Rule::in(Lead::STATUSES)],
+            'status' => ['sometimes', 'nullable', Rule::exists('lead_statuses', 'slug')],
             'assigned_to' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ]);
@@ -150,7 +150,7 @@ class LeadController extends Controller
             'mobile_number' => ['required', 'string', 'regex:/^[0-9+() -]{7,20}$/'],
             'designation' => ['sometimes', 'nullable', 'string', 'max:255'],
             'source' => ['required', Rule::in(Lead::SOURCES)],
-            'status' => ['required', Rule::in(Lead::STATUSES)],
+            'status' => ['required', Rule::exists('lead_statuses', 'slug')],
             'assigned_to' => ['required', 'integer', 'exists:users,id'],
             'requirement' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'location' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -246,6 +246,8 @@ class LeadController extends Controller
             'assigned' => Lead::whereNotNull('assigned_to')->count(),
             'by_source' => Lead::query()->selectRaw('source, COUNT(*) as total')
                 ->groupBy('source')->pluck('total', 'source'),
+            'by_status' => Lead::query()->selectRaw('status, COUNT(*) as total')
+                ->groupBy('status')->pluck('total', 'status'),
         ];
     }
 

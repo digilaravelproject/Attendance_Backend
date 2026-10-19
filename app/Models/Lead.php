@@ -55,4 +55,9 @@ class Lead extends Model
             ->whereIn('event_type', ['assigned', 'reassigned'])
             ->latestOfMany('occurred_at');
     }
+
+    public function statusDefinition()
+    {
+        return $this->belongsTo(LeadStatus::class, 'status', 'slug');
+    }
 }
