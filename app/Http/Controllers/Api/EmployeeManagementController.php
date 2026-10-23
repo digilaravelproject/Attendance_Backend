@@ -67,12 +67,17 @@ class EmployeeManagementController extends Controller
 
     public function allUsers(Request $request): JsonResponse
     {
-        $query = User::query()->whereIn('role', ['admin', 'employee']);
-        if ($request->filled('role')) {
-            $query->where('role', $request->input('role'));
-        }
+        $query = User::query()
+            ->where('role', 'employee')
+            ->whereHas('roles', fn ($role) => $role
+                ->where('status', true)
+                ->whereHas('permissions', fn ($permission) => $permission
+                    ->where('module_slug', 'leave_management')
+                    ->where('action', 'approve_reject_leave')));
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
+        } else {
+            $query->where(fn ($builder) => $builder->whereNull('status')->orWhere('status', '!=', 'Inactive'));
         }
         $search = trim((string) $request->input('search', ''));
         if ($search !== '') {
@@ -81,14 +86,13 @@ class EmployeeManagementController extends Controller
                 ->orWhere('employee_id', 'like', "%{$search}%"));
         }
 
-        $users = $query->latest()->get($this->columns())->map(fn (User $user) => $this->data($user));
+        $users = $query->orderBy('name')->get($this->columns())->map(fn (User $user) => $this->data($user));
 
         return response()->json([
             'status' => true,
-            'message' => 'Administrators and employees retrieved successfully.',
+            'message' => 'Employees with approve/reject leave permission retrieved successfully.',
             'counts' => [
                 'total_users' => $users->count(),
-                'admins' => $users->where('role', 'admin')->count(),
                 'employees' => $users->where('role', 'employee')->count(),
             ],
             'data' => $users->values(),

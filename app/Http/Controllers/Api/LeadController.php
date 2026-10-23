@@ -4,16 +4,21 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
+use App\Models\LeadHistory;
 use App\Models\User;
+use App\Services\LeadSourceAssignmentService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class LeadController extends Controller
 {
+    public function __construct(private readonly LeadSourceAssignmentService $leadSources) {}
+
     public function index(Request $request): JsonResponse
     {
         $this->normalizeSourceFilter($request);
@@ -66,6 +71,69 @@ class LeadController extends Controller
             'status' => true,
             'message' => 'Sales employees retrieved successfully.',
             'data' => $employees,
+        ]);
+    }
+
+    public function salesEmployeeDetails(Request $request, User $employee): JsonResponse
+    {
+        if (! $this->salesEmployeeQuery()->whereKey($employee->id)->exists()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Active sales employee not found.',
+            ], 404);
+        }
+        $validated = $request->validate([
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+        $base = Lead::where('assigned_to', $employee->id);
+        $paginator = (clone $base)->with([
+            'latestHistory.actor:id,employee_id,name',
+            'createdBy:id,employee_id,name,role',
+        ])->latest('updated_at')->latest('id')->paginate($validated['per_page'] ?? 20);
+        $histories = LeadHistory::whereIn('lead_id', (clone $base)->select('id'))
+            ->whereIn('event_type', ['call', 'call_completed'])
+            ->get();
+        $totalTalkSeconds = (int) $histories->sum(fn ($history) => (int) ($history->metadata['duration_seconds'] ?? 0));
+        $calls = $histories->filter(fn ($history) => (int) ($history->metadata['duration_seconds'] ?? 0) > 0)->count();
+        $revenue = (float) (clone $base)->where('status', 'converted')->sum('estimated_value');
+        $target = (float) ($employee->sales_target ?? 0);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Sales employee lead details retrieved successfully.',
+            'data' => [
+                'employee' => $employee->only(['id', 'employee_id', 'name', 'email', 'mobile_number', 'designation', 'avatar', 'status']),
+                'summary' => [
+                    'revenue' => $revenue,
+                    'target' => $target,
+                    'target_achieved_percentage' => $target > 0 ? round(($revenue / $target) * 100, 2) : 0,
+                    'average_talk_seconds' => $calls > 0 ? (int) round($totalTalkSeconds / $calls) : 0,
+                    'total_talk_seconds' => $totalTalkSeconds,
+                    'admin_assigned_leads' => (clone $base)->where(fn ($query) => $query->whereNull('created_by')->orWhere('created_by', '!=', $employee->id))->count(),
+                    'self_brought_leads' => (clone $base)->where('created_by', $employee->id)->count(),
+                    'active_leads' => (clone $base)->whereNotIn('status', ['converted', 'lost', 'unreachable', 'wrong_number'])->count(),
+                    'total_leads' => (clone $base)->count(),
+                ],
+                'leads' => collect($paginator->items())->map(function (Lead $lead) use ($employee) {
+                    $item = $this->leadData($lead);
+                    $item['assignment_origin'] = $lead->created_by === $employee->id ? 'self_brought' : 'admin_assigned';
+                    $item['recent_activity'] = $lead->latestHistory ? [
+                        'id' => $lead->latestHistory->id,
+                        'event_type' => $lead->latestHistory->event_type,
+                        'title' => $lead->latestHistory->title,
+                        'description' => $lead->latestHistory->description,
+                        'occurred_at' => $lead->latestHistory->occurred_at?->toIso8601String(),
+                    ] : null;
+
+                    return $item;
+                })->all(),
+                'pagination' => [
+                    'current_page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'last_page' => $paginator->lastPage(),
+                ],
+            ],
         ]);
     }
 
@@ -152,7 +220,7 @@ class LeadController extends Controller
             'designation' => ['sometimes', 'nullable', 'string', 'max:255'],
             'source' => ['required', Rule::in(Lead::SOURCES)],
             'status' => ['required', Rule::exists('lead_statuses', 'slug')],
-            'assigned_to' => ['required', 'integer', 'exists:users,id'],
+            'assigned_to' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
             'requirement' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'location' => ['sometimes', 'nullable', 'string', 'max:255'],
             'estimated_value' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:999999999999.99'],
@@ -160,8 +228,19 @@ class LeadController extends Controller
             'notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
         ]);
 
-        $employee = $this->salesEmployeeQuery()->find($validated['assigned_to']);
-        if (! $employee) {
+        if (! $this->leadSources->isActive($validated['source'])) {
+            return response()->json([
+                'status' => false,
+                'message' => Str::headline($validated['source']).' lead source is inactive. The lead was not inserted.',
+                'source_key' => $validated['source'],
+                'is_active' => false,
+            ], 409);
+        }
+
+        $employee = isset($validated['assigned_to'])
+            ? $this->salesEmployeeQuery()->find($validated['assigned_to'])
+            : null;
+        if (isset($validated['assigned_to']) && ! $employee) {
             return response()->json([
                 'status' => false,
                 'message' => 'The selected user is not an active sales employee.',
@@ -178,14 +257,20 @@ class LeadController extends Controller
                 'description' => $lead->notes ?: 'Lead created manually.',
                 'occurred_at' => now(),
             ]);
-            $lead->histories()->create([
-                'actor_id' => $request->user()->id,
-                'event_type' => 'assigned',
-                'title' => 'Assigned to '.$employee->name,
-                'description' => 'Lead assigned during creation.',
-                'metadata' => ['employee_id' => $employee->id],
-                'occurred_at' => now(),
-            ]);
+            if ($employee) {
+                $lead->histories()->create([
+                    'actor_id' => $request->user()->id,
+                    'event_type' => 'assigned',
+                    'title' => 'Assigned to '.$employee->name,
+                    'description' => 'Lead assigned during creation.',
+                    'metadata' => ['employee_id' => $employee->id],
+                    'occurred_at' => now(),
+                ]);
+            } elseif (! $this->leadSources->assignNewLead($lead)) {
+                throw ValidationException::withMessages([
+                    'assigned_to' => ['Assign an employee directly or configure an active employee on this lead source.'],
+                ]);
+            }
 
             return $lead;
         });

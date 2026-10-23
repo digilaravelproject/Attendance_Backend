@@ -43,7 +43,8 @@ class EmployeeLeadController extends Controller
             'assignedEmployee:id,employee_id,name,email,mobile_number,designation,avatar',
             'createdBy:id,employee_id,name,role',
             'latestAssignment.actor:id,employee_id,name,role',
-        ]);
+            'activeReminders.creator:id,employee_id,name',
+        ])->withCount('activeReminders');
 
         if (! empty($validated['q'])) {
             $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], trim($validated['q'])).'%';
@@ -64,7 +65,11 @@ class EmployeeLeadController extends Controller
             $query->where('source', $validated['source']);
         }
 
-        $paginator = $query->latest('updated_at')->latest('id')
+        $newLeadCutoff = now()->subDays(10);
+        $paginator = $query
+            ->orderByDesc('active_reminders_count')
+            ->orderByRaw('CASE WHEN COALESCE(source_created_at, created_at) >= ? THEN 1 ELSE 0 END DESC', [$newLeadCutoff])
+            ->latest('updated_at')->latest('id')
             ->paginate($validated['per_page'] ?? 20)->withQueryString();
 
         return response()->json([
@@ -78,6 +83,9 @@ class EmployeeLeadController extends Controller
                 'converted' => (clone $base)->where('status', 'converted')->count(),
                 'unreachable' => (clone $base)->where('status', 'unreachable')->count(),
                 'wrong_number' => (clone $base)->where('status', 'wrong_number')->count(),
+                'reminders' => (clone $base)->whereHas('activeReminders')->count(),
+                'new_last_10_days' => (clone $base)
+                    ->whereRaw('COALESCE(source_created_at, created_at) >= ?', [$newLeadCutoff])->count(),
                 'converted_revenue' => (float) (clone $base)->where('status', 'converted')->sum('estimated_value'),
                 'by_status' => (clone $base)->selectRaw('status, COUNT(*) as total')
                     ->groupBy('status')->pluck('total', 'status'),
@@ -182,6 +190,7 @@ class EmployeeLeadController extends Controller
             'createdBy:id,employee_id,name,role',
             'latestAssignment.actor:id,employee_id,name,role',
             'histories.actor:id,employee_id,name',
+            'activeReminders.creator:id,employee_id,name',
         ]);
         $data = $this->leadData($lead, $request->user());
         $data['history'] = $lead->histories->map(fn ($history) => [
@@ -333,6 +342,40 @@ class EmployeeLeadController extends Controller
         ]);
     }
 
+    public function setReminder(Request $request, Lead $lead): JsonResponse
+    {
+        if ($response = $this->ensureSalesEmployee($request->user())) {
+            return $response;
+        }
+        if ($response = $this->ensureOwner($lead, $request->user())) {
+            return $response;
+        }
+
+        $reminderType = $request->input('reminder_type', $request->input('action'));
+        $request->merge([
+            'reminder_type' => is_string($reminderType) ? $this->normalizeChoice($reminderType) : $reminderType,
+            'remind_at' => $request->input('remind_at', $request->input('scheduled_at', $request->input('reminder_at'))),
+            'note' => $request->input('note', $request->input('agenda')),
+        ]);
+        $validated = $request->validate([
+            'reminder_type' => ['required', Rule::in(['call', 'whatsapp', 'sms', 'meeting'])],
+            'remind_at' => ['required', 'date', 'after:now'],
+            'note' => ['sometimes', 'nullable', 'string', 'max:5000'],
+        ]);
+
+        $reminder = $lead->reminders()->create([
+            ...$validated,
+            'created_by' => $request->user()->id,
+            'status' => 'pending',
+        ])->load('creator:id,employee_id,name');
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Lead reminder created successfully.',
+            'data' => $this->reminderData($reminder),
+        ], 201);
+    }
+
     private function salesEmployeeQuery(): Builder
     {
         return User::query()
@@ -420,6 +463,8 @@ class EmployeeLeadController extends Controller
         $origin = $lead->created_by === $viewer->id
             ? 'self_brought'
             : (($assignmentActor?->role === 'admin' || $createdBy?->role === 'admin') ? 'admin_assigned' : 'transferred');
+        $activeReminders = $lead->relationLoaded('activeReminders') ? $lead->activeReminders : collect();
+        $leadDate = $lead->source_created_at ?? $lead->created_at;
 
         return [
             'id' => $lead->id,
@@ -435,6 +480,11 @@ class EmployeeLeadController extends Controller
             'status' => $lead->status,
             'assigned_to' => $lead->assigned_to,
             'is_owner' => $lead->assigned_to === $viewer->id,
+            'is_reminder' => $activeReminders->isNotEmpty(),
+            'is_new' => $leadDate?->greaterThanOrEqualTo(now()->subDays(10)) ?? false,
+            'next_reminder' => $activeReminders->isNotEmpty()
+                ? $this->reminderData($activeReminders->first())
+                : null,
             'assigned_employee' => $lead->relationLoaded('assignedEmployee') ? $lead->assignedEmployee : null,
             'created_by' => $createdBy,
             'location' => $lead->location,
@@ -444,6 +494,19 @@ class EmployeeLeadController extends Controller
             'source_created_at' => $lead->source_created_at?->toIso8601String(),
             'created_at' => $lead->created_at?->toIso8601String(),
             'updated_at' => $lead->updated_at?->toIso8601String(),
+        ];
+    }
+
+    private function reminderData($reminder): array
+    {
+        return [
+            'id' => $reminder->id,
+            'reminder_type' => $reminder->reminder_type,
+            'remind_at' => $reminder->remind_at?->toIso8601String(),
+            'note' => $reminder->note,
+            'status' => $reminder->status,
+            'created_by' => $reminder->relationLoaded('creator') ? $reminder->creator : null,
+            'created_at' => $reminder->created_at?->toIso8601String(),
         ];
     }
 }

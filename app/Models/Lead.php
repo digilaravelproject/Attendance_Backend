@@ -60,4 +60,24 @@ class Lead extends Model
     {
         return $this->belongsTo(LeadStatus::class, 'status', 'slug');
     }
+
+    public function sourceRule()
+    {
+        return $this->belongsTo(LeadSource::class, 'source', 'source_key');
+    }
+
+    public function latestHistory()
+    {
+        return $this->hasOne(LeadHistory::class)->latestOfMany('occurred_at');
+    }
+
+    public function reminders()
+    {
+        return $this->hasMany(LeadReminder::class);
+    }
+
+    public function activeReminders()
+    {
+        return $this->hasMany(LeadReminder::class)->where('status', 'pending')->orderBy('remind_at');
+    }
 }

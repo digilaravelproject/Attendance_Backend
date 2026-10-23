@@ -94,15 +94,24 @@ class SalaryAttendanceApiTest extends TestCase
             ->assertOk()->assertJsonPath('data.summary.created', 1)
             ->assertJsonPath('data.employees.0.status', 'Created');
 
-        $this->actingAs($employee)->getJson('/api/admin/salary-history')
+        $history = $this->actingAs($employee)->getJson('/api/admin/salary-history')
             ->assertOk()
             ->assertJsonPath('data.current_monthly_ctc', 45000)
             ->assertJsonPath('data.recent_payslips.0.net_payable', 42500)
-            ->assertJsonPath('data.recent_payslips.0.id', $salaryId);
+            ->assertJsonPath('data.recent_payslips.0.id', $salaryId)
+            ->assertJsonStructure(['data' => ['recent_payslips' => [['payslip_url', 'payslip_download_url']]]]);
 
-        $this->actingAs($employee)->get("/api/admin/salaries/{$salaryId}/payslip")
-            ->assertOk()->assertHeader('content-type', 'text/html; charset=UTF-8')
-            ->assertSee('Rahul Sharma');
+        $payslip = $this->actingAs($employee)->get("/api/admin/salaries/{$salaryId}/payslip")
+            ->assertOk()->assertHeader('content-type', 'application/pdf')
+            ->assertHeader('content-disposition', 'inline; filename="payslip-EMP100-2026-09.pdf"');
+        $this->assertStringStartsWith('%PDF-1.4', $payslip->getContent());
+
+        $this->app['auth']->forgetGuards();
+        $signedUrl = $history->json('data.recent_payslips.0.payslip_url');
+        $signedPath = parse_url($signedUrl, PHP_URL_PATH).'?'.parse_url($signedUrl, PHP_URL_QUERY);
+        $this->get($signedPath)
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
     }
 
     public function test_employee_cannot_access_another_employees_payslip(): void

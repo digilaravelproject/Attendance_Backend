@@ -5,12 +5,19 @@ namespace Tests\Feature;
 use App\Models\Lead;
 use App\Models\Role;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class EmployeeLeadApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
 
     public function test_sales_employee_can_list_search_and_view_only_assigned_leads(): void
     {
@@ -113,6 +120,51 @@ class EmployeeLeadApiTest extends TestCase
 
         $this->actingAs($employee)->getJson('/api/employee/leads')->assertForbidden()
             ->assertJsonPath('message', 'Forbidden. An active sales employee is required.');
+    }
+
+    public function test_employee_can_add_a_reminder_and_reminder_and_new_leads_are_prioritized(): void
+    {
+        Carbon::setTestNow('2026-10-22 12:00:00');
+        [$salesOne] = $this->users();
+        $reminderLead = Lead::create([
+            'lead_code' => 'TC-301', 'source' => 'referral', 'full_name' => 'Reminder Lead',
+            'mobile_number' => '9000000001', 'status' => 'follow_up', 'assigned_to' => $salesOne->id,
+            'source_created_at' => now()->subDays(30),
+        ]);
+        $newLead = Lead::create([
+            'lead_code' => 'TC-302', 'source' => 'website', 'full_name' => 'New Lead',
+            'mobile_number' => '9000000002', 'status' => 'new', 'assigned_to' => $salesOne->id,
+            'source_created_at' => now()->subDays(2),
+        ]);
+        Lead::create([
+            'lead_code' => 'TC-303', 'source' => 'website', 'full_name' => 'Old Lead',
+            'mobile_number' => '9000000003', 'status' => 'new', 'assigned_to' => $salesOne->id,
+            'source_created_at' => now()->subDays(20),
+        ]);
+
+        $this->actingAs($salesOne)->postJson("/api/employee/leads/{$reminderLead->id}/reminder", [
+            'action' => 'call',
+            'scheduled_at' => '2026-10-22 16:00:00',
+            'agenda' => 'Call client for quotation and demo follow-up.',
+        ])->assertCreated()
+            ->assertJsonPath('data.reminder_type', 'call')
+            ->assertJsonPath('data.status', 'pending');
+
+        $this->assertDatabaseHas('lead_reminders', [
+            'lead_id' => $reminderLead->id,
+            'created_by' => $salesOne->id,
+            'reminder_type' => 'call',
+        ]);
+
+        $this->actingAs($salesOne)->getJson('/api/employee/leads')
+            ->assertOk()
+            ->assertJsonPath('summary.reminders', 1)
+            ->assertJsonPath('summary.new_last_10_days', 1)
+            ->assertJsonPath('data.0.id', $reminderLead->id)
+            ->assertJsonPath('data.0.is_reminder', true)
+            ->assertJsonPath('data.1.id', $newLead->id)
+            ->assertJsonPath('data.1.is_new', true);
+
     }
 
     private function users(): array

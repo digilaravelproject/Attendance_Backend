@@ -6,6 +6,8 @@ use App\Models\Department;
 use App\Models\Designation;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -47,6 +49,15 @@ class EmployeeAggregateLeaveApiTest extends TestCase
             'role' => 'employee', 'status' => 'Active', 'employee_id' => 'EMP-100',
             'department_id' => $department->id, 'department' => 'Design',
         ]);
+        $permission = Permission::create([
+            'module' => 'Leave Management',
+            'module_slug' => 'leave_management',
+            'name' => 'Approve / Reject Leave',
+            'action' => 'approve_reject_leave',
+        ]);
+        $approverRole = Role::create(['name' => 'Leave Approver', 'status' => true]);
+        $approverRole->permissions()->attach($permission);
+        $employee->roles()->attach($approverRole);
         $type = LeaveType::create(['name' => 'Sick Leave', 'code' => 'SL', 'annual_allowance' => 8]);
         LeaveRequest::create([
             'user_id' => $employee->id, 'leave_type_id' => $type->id,
@@ -55,9 +66,9 @@ class EmployeeAggregateLeaveApiTest extends TestCase
         ]);
 
         $this->actingAs($admin)->getJson('/api/admin/employees/all-users')->assertOk()
-            ->assertJsonPath('counts.total_users', 2)
-            ->assertJsonPath('counts.admins', 1)
-            ->assertJsonPath('counts.employees', 1);
+            ->assertJsonPath('counts.total_users', 1)
+            ->assertJsonPath('counts.employees', 1)
+            ->assertJsonPath('data.0.id', $employee->id);
         $this->actingAs($admin)->getJson("/api/admin/employees/{$employee->id}")->assertOk()
             ->assertJsonPath('data.summary.leave_requests.total', 1)
             ->assertJsonCount(1, 'data.leave_requests');

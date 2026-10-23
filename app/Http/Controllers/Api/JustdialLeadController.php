@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
+use App\Services\LeadSourceAssignmentService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,6 +14,8 @@ use Illuminate\Support\Str;
 
 class JustdialLeadController extends Controller
 {
+    public function __construct(private readonly LeadSourceAssignmentService $leadSources) {}
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -36,6 +39,15 @@ class JustdialLeadController extends Controller
             'branchpin' => ['sometimes', 'nullable', 'string', 'max:20'],
             'parentid' => ['sometimes', 'nullable', 'string', 'max:191'],
         ]);
+
+        if (! $this->leadSources->isActive('justdial')) {
+            return response()->json([
+                'status' => false,
+                'message' => 'JustDial lead source is inactive. The lead was not inserted.',
+                'source_key' => 'justdial',
+                'is_active' => false,
+            ], 409);
+        }
 
         $result = DB::transaction(function () use ($request, $validated) {
             $lead = Lead::query()
@@ -70,6 +82,7 @@ class JustdialLeadController extends Controller
                     'metadata' => ['justdial_lead_id' => $validated['leadid']],
                     'occurred_at' => $lead->source_created_at ?? now(),
                 ]);
+                $this->leadSources->assignNewLead($lead);
             }
 
             return [$lead->fresh(), $created];
@@ -93,6 +106,8 @@ class JustdialLeadController extends Controller
                 'requirement' => $lead->requirement,
                 'location' => $lead->location,
                 'source_created_at' => $lead->source_created_at?->toIso8601String(),
+                'assigned_to' => $lead->assigned_to,
+                'assigned_employee' => $lead->assignedEmployee,
             ],
         ], $created ? 201 : 200);
     }

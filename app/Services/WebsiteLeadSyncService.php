@@ -13,6 +13,8 @@ use RuntimeException;
 
 class WebsiteLeadSyncService
 {
+    public function __construct(private readonly LeadSourceAssignmentService $leadSources) {}
+
     private const FIELD_MAP = [
         'name' => ['name', 'full_name', 'field_e46caed', 'field_05f2c38'],
         'company' => ['company', 'company_name', 'field_93bc8cc', 'field_01b4e0d'],
@@ -24,6 +26,10 @@ class WebsiteLeadSyncService
 
     public function sync(): array
     {
+        if (! $this->leadSources->isActive('website')) {
+            return ['processed' => 0, 'created' => 0, 'updated' => 0, 'skipped_inactive' => true];
+        }
+
         $url = config('services.website_leads.url');
         if (! is_string($url) || $url === '') {
             throw new RuntimeException('WEBSITE_LEADS_URL is not configured.');
@@ -112,6 +118,7 @@ class WebsiteLeadSyncService
                     ],
                     'occurred_at' => $lead->source_created_at ?? now(),
                 ]);
+                $this->leadSources->assignNewLead($lead);
             }
 
             return $isNew;

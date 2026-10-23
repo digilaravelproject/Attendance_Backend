@@ -42,4 +42,9 @@ class Project extends Model
     {
         return $this->hasMany(ProjectTimelineEvent::class)->latest('event_at');
     }
+
+    public function tasks()
+    {
+        return $this->hasMany(Task::class)->latest();
+    }
 }

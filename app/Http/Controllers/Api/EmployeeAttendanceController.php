@@ -174,20 +174,24 @@ class EmployeeAttendanceController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'days' => ['sometimes', 'integer', 'min:0', 'max:365'],
+            'all' => ['sometimes', 'boolean'],
         ]);
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
         }
 
         $days = (int) $request->input('days', 30);
-        $birthdays = $this->birthdayEmployees($days);
+        $users = $this->allUsersWithBirthdays();
+        $upcoming = $users->filter(fn (array $user) => $user['days_until'] !== null && $user['days_until'] <= $days)->values();
 
         return response()->json([
             'status' => true,
-            'message' => 'Upcoming birthdays retrieved successfully.',
+            'message' => 'Users and upcoming birthdays retrieved successfully.',
             'days' => $days,
-            'total' => $birthdays->count(),
-            'data' => $birthdays,
+            'total' => $users->count(),
+            'upcoming_total' => $upcoming->count(),
+            'data' => $users,
+            'upcoming_data' => $upcoming,
         ]);
     }
 
@@ -381,6 +385,44 @@ class EmployeeAttendanceController extends Controller
             })
             ->filter(fn (array $item) => $todayOnly ? $item['is_today'] : $item['days_until'] <= $days)
             ->sortBy(['days_until', 'name'])
+            ->values();
+    }
+
+    private function allUsersWithBirthdays(): Collection
+    {
+        $today = now()->startOfDay();
+
+        return User::query()
+            ->get(['id', 'employee_id', 'name', 'email', 'role', 'status', 'date_of_birth', 'designation', 'avatar'])
+            ->map(function (User $user) use ($today) {
+                if (! $user->date_of_birth) {
+                    return [
+                        ...$user->only(['id', 'employee_id', 'name', 'email', 'role', 'status', 'designation', 'avatar']),
+                        'date_of_birth' => null,
+                        'birthday' => null,
+                        'birthday_label' => null,
+                        'days_until' => null,
+                        'is_today' => false,
+                    ];
+                }
+
+                $birthday = Carbon::parse($user->date_of_birth);
+                $nextBirthday = $this->birthdayInYear($birthday, $today->year);
+                if ($nextBirthday->lt($today)) {
+                    $nextBirthday = $this->birthdayInYear($birthday, $today->year + 1);
+                }
+                $daysUntil = (int) $today->diffInDays($nextBirthday);
+
+                return [
+                    ...$user->only(['id', 'employee_id', 'name', 'email', 'role', 'status', 'designation', 'avatar']),
+                    'date_of_birth' => $user->date_of_birth->toDateString(),
+                    'birthday' => $nextBirthday->toDateString(),
+                    'birthday_label' => $daysUntil === 0 ? 'Today' : $nextBirthday->format('d M'),
+                    'days_until' => $daysUntil,
+                    'is_today' => $daysUntil === 0,
+                ];
+            })
+            ->sortBy(fn (array $user) => [$user['days_until'] === null ? 1 : 0, $user['days_until'] ?? PHP_INT_MAX, $user['name']])
             ->values();
     }
 

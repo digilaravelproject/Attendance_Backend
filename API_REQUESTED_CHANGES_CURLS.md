@@ -2,14 +2,15 @@
 
 Replace `{{base_url}}`, IDs, and the bearer token with values from your environment.
 
-## 1. Get all users (public; no middleware/token)
+## 1. Get employees who can approve/reject leave (public; no middleware/token)
 
 ```bash
 curl --location --request GET '{{base_url}}/api/admin/employees/all-users' \
   --header 'Accept: application/json'
 ```
 
-Optional filters: `role`, `status`, and `search`.
+Only active employees whose assigned role contains the `Approve / Reject Leave`
+permission are returned. Optional filters: `status` and `search`.
 
 ## 2. Get permissions for a role (public; no middleware/token)
 
@@ -20,7 +21,11 @@ curl --location --request GET '{{base_url}}/api/admin/permissions?role_id=10' \
 
 Each module contains `permissions`; the previous `actions` object is no longer returned.
 
-## 3. Get upcoming birthdays (admin or employee token)
+## 3. Get all users and upcoming birthdays (admin or employee token)
+
+`total` and `data` return every record from the `users` table, including users
+without a saved birthday. `upcoming_total` and `upcoming_data` contain only
+birthdays within the requested number of days.
 
 ```bash
 curl --location --request GET '{{base_url}}/api/admin/birthdays/upcoming?days=30' \
@@ -87,4 +92,89 @@ Before calling the handover endpoint in an existing database, run:
 
 ```bash
 php artisan migrate
+```
+
+## 5. Get a project with database-backed tasks
+
+The `data.tasks.summary` and `data.tasks.items` values are calculated from the
+`tasks` table using the task's `project_id`.
+
+```bash
+curl --location --request GET '{{base_url}}/api/admin/projects/2' \
+  --header 'Accept: application/json' \
+  --header 'Authorization: Bearer {{access_token}}'
+```
+
+## 6. Get salary history and working payslip links
+
+```bash
+curl --location --request GET '{{base_url}}/api/admin/salary-history?year=2026' \
+  --header 'Accept: application/json' \
+  --header 'Authorization: Bearer {{employee_access_token}}'
+```
+
+Each salary row contains:
+
+- `payslip_url`: a signed PDF URL that opens inline in a browser.
+- `payslip_download_url`: a signed PDF URL that downloads the same formatted payslip.
+
+The signed URL is valid for seven days and does not need an Authorization header.
+Copy the complete URL returned by the API, including `expires` and `signature`:
+
+```bash
+curl --location --request GET '{{payslip_url_from_response}}' \
+  --output payslip.pdf
+```
+
+Download URL:
+
+```bash
+curl --location --request GET '{{payslip_download_url_from_response}}' \
+  --output payslip.pdf
+```
+
+## 7. Add a reminder to an assigned lead
+
+`reminder_type` accepts `call`, `whatsapp`, `sms`, or `meeting`. The API also
+accepts the UI aliases `action`, `scheduled_at`, and `agenda` shown below.
+
+```bash
+curl --location --request POST '{{base_url}}/api/employee/leads/201/reminder' \
+  --header 'Accept: application/json' \
+  --header 'Authorization: Bearer {{employee_access_token}}' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "action": "call",
+    "scheduled_at": "2026-10-23T16:00:00+05:30",
+    "agenda": "Call client for price quotation and demo follow-up."
+  }'
+```
+
+The plural endpoint `/api/employee/leads/201/reminders` is also supported.
+
+## 8. Get assigned leads with reminder/new flags and priority ordering
+
+```bash
+curl --location --request GET '{{base_url}}/api/employee/leads?page=1&per_page=20' \
+  --header 'Accept: application/json' \
+  --header 'Authorization: Bearer {{employee_access_token}}'
+```
+
+Every item includes `is_reminder`, `is_new`, and `next_reminder`. Pending reminder
+leads are returned first, then leads created/imported during the last 10 days,
+then the remaining leads. The response summary includes `reminders` and
+`new_last_10_days` counts.
+
+Get one lead with the same reminder fields and its full history:
+
+```bash
+curl --location --request GET '{{base_url}}/api/employee/leads/201' \
+  --header 'Accept: application/json' \
+  --header 'Authorization: Bearer {{employee_access_token}}'
+```
+
+Before using lead reminders in an existing database, run:
+
+```bash
+php artisan migrate --force
 ```

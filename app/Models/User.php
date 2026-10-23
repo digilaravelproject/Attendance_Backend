@@ -38,6 +38,11 @@ class User extends Authenticatable
         'date_of_birth',
         'date_of_joining',
         'monthly_salary',
+        'sales_target_enabled',
+        'sales_target',
+        'sales_target_metric_type',
+        'sales_target_period',
+        'incentive_commission_percent',
         'skills',
         'address',
         'avatar',
@@ -176,6 +181,12 @@ class User extends Authenticatable
     public function createdLeads()
     {
         return $this->hasMany(Lead::class, 'created_by');
+    }
+
+    public function leadSources()
+    {
+        return $this->belongsToMany(LeadSource::class, 'lead_source_user')
+            ->withPivot('position')->withTimestamps();
     }
 
     public function sentPerformanceMessages()

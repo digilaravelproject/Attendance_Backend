@@ -27,6 +27,11 @@ class RequestedApiChangesTest extends TestCase
         User::factory()->create(['role' => 'admin']);
         $role = Role::create(['name' => 'Public Permission Role', 'status' => true]);
         $role->permissions()->sync(Permission::limit(2)->pluck('id'));
+        $approverRole = Role::create(['name' => 'Leave Approver', 'status' => true]);
+        $approverRole->permissions()->attach(Permission::where('action', 'approve_reject_leave')->firstOrFail());
+        $approver = User::factory()->create(['role' => 'employee', 'status' => 'Active']);
+        $approver->roles()->attach($approverRole);
+        User::factory()->create(['role' => 'employee', 'status' => 'Active']);
 
         $this->getJson("/api/admin/permissions?role_id={$role->id}")
             ->assertOk()
@@ -36,7 +41,8 @@ class RequestedApiChangesTest extends TestCase
 
         $this->getJson('/api/admin/employees/all-users')
             ->assertOk()
-            ->assertJsonPath('counts.total_users', 1);
+            ->assertJsonPath('counts.total_users', 1)
+            ->assertJsonPath('data.0.id', $approver->id);
     }
 
     public function test_upcoming_birthdays_reads_the_saved_date_of_birth_for_admins(): void
@@ -52,10 +58,13 @@ class RequestedApiChangesTest extends TestCase
 
         $this->actingAs($admin)->getJson('/api/admin/birthdays/upcoming?days=30')
             ->assertOk()
-            ->assertJsonPath('total', 1)
+            ->assertJsonPath('total', 2)
+            ->assertJsonPath('upcoming_total', 1)
             ->assertJsonPath('data.0.name', 'Birthday Employee')
             ->assertJsonPath('data.0.birthday', '2026-10-20')
-            ->assertJsonPath('data.0.days_until', 14);
+            ->assertJsonPath('data.0.days_until', 14)
+            ->assertJsonPath('data.1.role', 'admin')
+            ->assertJsonPath('data.1.birthday', null);
 
         $this->assertDatabaseHas('users', [
             'name' => 'Birthday Employee',

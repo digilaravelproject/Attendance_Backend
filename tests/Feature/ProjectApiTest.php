@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Designation;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -32,8 +33,16 @@ class ProjectApiTest extends TestCase
         ], ['Accept' => 'application/json'])->assertCreated()
             ->assertJsonCount(2, 'data.team')
             ->assertJsonCount(1, 'data.files')
-            ->assertJsonPath('data.tasks.is_static', true);
+            ->assertJsonPath('data.tasks.is_static', false);
         $id = $created->json('data.id');
+        $task = Task::create([
+            'task_name' => 'Build project dashboard',
+            'project_id' => $id,
+            'priority' => 'High',
+            'status' => 'In Progress',
+            'created_by' => $admin->id,
+        ]);
+        $task->assignees()->attach($employeeOne->id, ['assigned_by' => $admin->id]);
 
         $this->actingAs($admin)->getJson('/api/admin/projects/total')->assertOk()
             ->assertJsonPath('data.total_projects', 1)
@@ -42,6 +51,9 @@ class ProjectApiTest extends TestCase
             ->assertJsonPath('total', 1);
         $this->actingAs($admin)->getJson("/api/admin/projects/{$id}")->assertOk()
             ->assertJsonPath('data.overview.status', 'Not Started')
+            ->assertJsonPath('data.tasks.summary.total', 1)
+            ->assertJsonPath('data.tasks.summary.in_progress', 1)
+            ->assertJsonPath('data.tasks.items.0.task_name', 'Build project dashboard')
             ->assertJsonCount(2, 'data.team');
         $this->actingAs($admin)->patchJson("/api/admin/projects/{$id}", [
             'status' => 'In Progress', 'progress' => 41,

@@ -4,6 +4,7 @@ namespace App;
 
 use App\Models\FacebookIntegration;
 use App\Models\Lead;
+use App\Services\LeadSourceAssignmentService;
 use Carbon\Carbon;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,8 @@ use Throwable;
 
 class FacebookLeadSyncService
 {
+    public function __construct(private readonly LeadSourceAssignmentService $leadSources) {}
+
     public function exchangeCode(FacebookIntegration $integration, string $code): array
     {
         $response = $this->client()->get($this->graphUrl('oauth/access_token'), [
@@ -78,6 +81,10 @@ class FacebookLeadSyncService
 
     public function sync(FacebookIntegration $integration): array
     {
+        if (! $this->leadSources->isActive('facebook')) {
+            return ['processed' => 0, 'created' => 0, 'updated' => 0, 'skipped_inactive' => true];
+        }
+
         if (! $integration->page_id || ! $integration->page_access_token) {
             $integration = $this->selectConfiguredPage($integration);
         }
@@ -189,6 +196,7 @@ class FacebookLeadSyncService
                     ],
                     'occurred_at' => $lead->source_created_at ?? now(),
                 ]);
+                $this->leadSources->assignNewLead($lead);
             }
 
             return $isNew;

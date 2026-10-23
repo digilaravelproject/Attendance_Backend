@@ -5,19 +5,24 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Salary;
 use App\Models\User;
+use App\Services\PayslipPdfService;
 use App\Services\SalaryCalculator;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 
 class SalaryController extends Controller
 {
-    public function __construct(private readonly SalaryCalculator $calculator) {}
+    public function __construct(
+        private readonly SalaryCalculator $calculator,
+        private readonly PayslipPdfService $payslipPdf,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -52,6 +57,7 @@ class SalaryController extends Controller
                 'status' => $salary ? 'Created' : 'Pending',
                 'payment_status' => $salary?->status,
                 'payslip_url' => $salary ? $this->payslipUrl($salary) : null,
+                'payslip_download_url' => $salary ? $this->payslipUrl($salary, true) : null,
             ];
         });
         $summary = ['total_employees' => $rows->count(), 'created' => $rows->where('status', 'Created')->count(), 'pending' => $rows->where('status', 'Pending')->count()];
@@ -87,6 +93,7 @@ class SalaryController extends Controller
             ...$breakdown,
             'payment_details' => $salary ? $this->paymentData($salary) : null,
             'payslip_url' => $salary ? $this->payslipUrl($salary) : null,
+            'payslip_download_url' => $salary ? $this->payslipUrl($salary, true) : null,
         ]]);
     }
 
@@ -178,16 +185,23 @@ class SalaryController extends Controller
 
     public function payslip(Request $request, Salary $salary): Response
     {
-        if ($request->user()->role !== 'admin' && $salary->user_id !== $request->user()->id) {
+        $user = auth('sanctum')->user() ?? $request->user();
+        $hasAccess = $request->hasValidSignature()
+            || ($user && ($user->role === 'admin' || $salary->user_id === $user->id));
+        if (! $hasAccess) {
             abort(403, 'You are not allowed to access this payslip.');
         }
-        $salary->load('employee');
+        $salary->load(['employee', 'creator']);
         $employee = $salary->employee;
-        $rows = fn (array $items) => collect($items)->map(fn ($item) => '<tr><td>'.e($item['name']).'</td><td style="text-align:right">&#8377;'.number_format($item['amount'], 2).'</td></tr>')->implode('');
-        $html = '<!doctype html><html><head><meta charset="utf-8"><title>Payslip</title><style>body{font-family:Arial;max-width:760px;margin:35px auto;color:#172033}h1{color:#2463eb}.meta{display:flex;justify-content:space-between}table{width:100%;border-collapse:collapse;margin:20px 0}td,th{padding:10px;border-bottom:1px solid #ddd}th{text-align:left;background:#f5f7fb}.total{font-size:20px;font-weight:bold}</style></head><body><h1>Payslip</h1><div class="meta"><div><b>'.e($employee->name).'</b><br>'.e($employee->employee_id).'<br>'.e($employee->designation).'</div><div>'.e($salary->salary_month->format('F Y')).'<br>Paid: '.e($salary->payment_date->format('d M Y')).'</div></div><h3>Earnings</h3><table>'.$rows($salary->earnings).'</table><h3>Deductions</h3><table>'.$rows($salary->deductions).'</table><table><tr><th>Gross Earnings</th><td>&#8377;'.number_format((float) $salary->gross_earnings, 2).'</td></tr><tr><th>Total Deductions</th><td>&#8377;'.number_format((float) $salary->total_deductions, 2).'</td></tr><tr class="total"><th>Net Pay</th><td>&#8377;'.number_format((float) $salary->net_payable, 2).'</td></tr></table></body></html>';
+        $pdf = $this->payslipPdf->render($salary);
         $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+        $filename = 'payslip-'.$employee->employee_id.'-'.$salary->salary_month->format('Y-m').'.pdf';
 
-        return response($html, 200, ['Content-Type' => 'text/html; charset=UTF-8', 'Content-Disposition' => $disposition.'; filename="payslip-'.$employee->employee_id.'-'.$salary->salary_month->format('Y-m').'.html"']);
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => $disposition.'; filename="'.$filename.'"',
+            'Content-Length' => (string) strlen($pdf),
+        ]);
     }
 
     private function employee(string $id): ?User
@@ -226,12 +240,16 @@ class SalaryController extends Controller
     {
         return ['id' => $salary->id, 'employee' => $salary->relationLoaded('employee') ? $this->employeeData($salary->employee) : null,
             'salary_month' => $salary->salary_month->format('Y-m'), 'month_label' => $salary->salary_month->format('F Y'), ...$this->salaryAmounts($salary),
-            ...$this->paymentData($salary), 'payslip_url' => $this->payslipUrl($salary)];
+            ...$this->paymentData($salary), 'payslip_url' => $this->payslipUrl($salary),
+            'payslip_download_url' => $this->payslipUrl($salary, true)];
     }
 
-    private function payslipUrl(Salary $salary): string
+    private function payslipUrl(Salary $salary, bool $download = false): string
     {
-        return url("/api/admin/salaries/{$salary->id}/payslip");
+        return URL::temporarySignedRoute('salaries.payslip', now()->addDays(7), [
+            'salary' => $salary->id,
+            ...($download ? ['download' => 1] : []),
+        ]);
     }
 
     private function validationError(array $errors): JsonResponse

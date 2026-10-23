@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\ProjectTimelineEvent;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -354,6 +355,9 @@ class ProjectController extends Controller
             'members:id,employee_id,name,email,designation,avatar,status',
             'files.uploader:id,name,email',
             'timelineEvents.actor:id,name,email',
+            'tasks.creator:id,name,email,avatar,role',
+            'tasks.assignees:id,employee_id,name,email,avatar,role,designation',
+            'tasks.subtasks',
         ]);
         $files = $project->files->map(fn ($file) => [
             'id' => $file->id,
@@ -376,12 +380,7 @@ class ProjectController extends Controller
                 'progress' => $project->progress,
                 'status_track' => $this->statusTrack($project->status),
             ],
-            'tasks' => [
-                'is_static' => true,
-                'message' => 'Task workflow will be added in a future release.',
-                'summary' => ['total' => 0, 'completed' => 0, 'in_progress' => 0, 'testing' => 0, 'to_do' => 0],
-                'items' => [],
-            ],
+            'tasks' => $this->taskData($project),
             'team' => $project->members->map(fn (User $user) => $this->memberData($user))->values(),
             'files' => $files,
             'timeline' => $project->timelineEvents->map(fn ($event) => [
@@ -390,6 +389,45 @@ class ProjectController extends Controller
                 'description' => $event->description,
                 'event_at' => $event->event_at,
                 'actor' => $event->actor,
+            ])->values(),
+        ];
+    }
+
+    private function taskData(Project $project): array
+    {
+        $tasks = $project->tasks;
+
+        return [
+            'is_static' => false,
+            'summary' => [
+                'total' => $tasks->count(),
+                'completed' => $tasks->where('status', 'Completed')->count(),
+                'in_progress' => $tasks->where('status', 'In Progress')->count(),
+                'testing' => $tasks->whereIn('status', ['In Review', 'Submitted For Testing'])->count(),
+                'to_do' => $tasks->where('status', 'Pending')->count(),
+                'on_hold' => $tasks->where('status', 'On Hold')->count(),
+                'cancelled' => $tasks->where('status', 'Cancelled')->count(),
+            ],
+            'items' => $tasks->map(fn (Task $task) => [
+                'id' => $task->id,
+                'task_name' => $task->task_name,
+                'description' => $task->description,
+                'category' => $task->category,
+                'priority' => $task->priority,
+                'status' => $task->status,
+                'start_date' => $task->start_date?->toDateString(),
+                'due_date' => $task->due_date?->toDateString(),
+                'completed_at' => $task->completed_at?->toIso8601String(),
+                'estimated_hours' => $task->estimated_hours,
+                'logged_seconds' => $task->current_logged_seconds,
+                'logged_time' => $task->formatted_logged_time,
+                'is_timer_running' => $task->is_timer_running,
+                'subtasks_total' => $task->subtasks->count(),
+                'subtasks_completed' => $task->subtasks->where('is_completed', true)->count(),
+                'creator' => $task->creator,
+                'assignees' => $task->assignees,
+                'created_at' => $task->created_at,
+                'updated_at' => $task->updated_at,
             ])->values(),
         ];
     }

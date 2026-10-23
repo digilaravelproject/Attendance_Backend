@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\FacebookAuthController;
 use App\Http\Controllers\Api\JustdialLeadController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\LeadIntegrationStatusController;
+use App\Http\Controllers\Api\LeadSourceController;
 use App\Http\Controllers\Api\LeadStatusController;
 use App\Http\Controllers\Api\LeaveManagementController;
 use App\Http\Controllers\Api\NotificationController;
@@ -47,6 +48,8 @@ Route::prefix('admin')->group(function () {
     // Public lookup APIs used by role/employee selectors.
     Route::get('/employees/all-users', [EmployeeManagementController::class, 'allUsers']);
     Route::get('/permissions', [PermissionController::class, 'index']);
+    Route::get('/salaries/{salary}/payslip', [SalaryController::class, 'payslip'])
+        ->whereNumber('salary')->name('salaries.payslip');
 
     /*
     | Task APIs (No Middleware - Accessible to Admin/Manager/Employee)
@@ -115,6 +118,16 @@ Route::prefix('admin')->group(function () {
         Route::get('/leave-types', [LeaveManagementController::class, 'leaveTypes']);
         Route::get('/holidays', [LeaveManagementController::class, 'holidays']);
         Route::get('/birthdays/upcoming', [EmployeeAttendanceController::class, 'upcomingBirthdays']);
+        Route::get('/salary-history', [SalaryController::class, 'myHistory']);
+        Route::get('/salaries/my-history', [SalaryController::class, 'myHistory']);
+
+        // Authenticated API without administrator/employee role restrictions.
+        Route::get('/leads/sales-employees', [LeadController::class, 'salesEmployees']);
+        Route::get('/leads/sales-employees/{employee}', [LeadController::class, 'salesEmployeeDetails'])->whereNumber('employee');
+        Route::get('/lead-sources', [LeadSourceController::class, 'index']);
+        Route::post('/lead-sources', [LeadSourceController::class, 'store']);
+        Route::get('/lead-sources/{leadSource}', [LeadSourceController::class, 'show'])->whereNumber('leadSource');
+        Route::match(['put', 'patch'], '/lead-sources/{leadSource}', [LeadSourceController::class, 'update'])->whereNumber('leadSource');
 
         // Dynamic performance APIs. Visibility is enforced in the controller:
         // admin = all employees, manager = self/direct reports, employee = self.
@@ -143,8 +156,6 @@ Route::prefix('admin')->group(function () {
         Route::delete('/projects/{id}/employees/{employeeId}', [ProjectController::class, 'removeEmployee'])->whereNumber(['id', 'employeeId']);
         Route::delete('/projects/{id}', [ProjectController::class, 'destroy'])->whereNumber('id');
 
-        // A payslip is available to administrators and to the employee who owns it.
-        Route::get('/salaries/{salary}/payslip', [SalaryController::class, 'payslip'])->whereNumber('salary');
     });
 
     // Employee panel routes use the same /api/admin authorization endpoints and token.
@@ -154,8 +165,6 @@ Route::prefix('admin')->group(function () {
         Route::post('/attendance/mark', [EmployeeAttendanceController::class, 'checkIn']);
         Route::post('/attendance/mark-logout', [EmployeeAttendanceController::class, 'checkOut']);
         Route::get('/attendance/history', [EmployeeAttendanceController::class, 'history']);
-        Route::get('/salary-history', [SalaryController::class, 'myHistory']);
-        Route::get('/salaries/my-history', [SalaryController::class, 'myHistory']);
     });
 
     // Protected routes (Sanctum Auth Token Required)
@@ -170,7 +179,6 @@ Route::prefix('admin')->group(function () {
         Route::get('/lead-integrations/status', [LeadIntegrationStatusController::class, 'show']);
 
         Route::get('/leads/search', [LeadController::class, 'search']);
-        Route::get('/leads/sales-employees', [LeadController::class, 'salesEmployees']);
         Route::get('/leads', [LeadController::class, 'index']);
         Route::post('/leads', [LeadController::class, 'store']);
         Route::get('/leads/{lead}', [LeadController::class, 'show'])->whereNumber('lead');
@@ -294,7 +302,7 @@ Route::prefix('admin')->group(function () {
 | Employee Sales CRM API Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('employee')->middleware(['auth:sanctum', 'employee'])->group(function () {
+Route::prefix('employee')->middleware('auth:sanctum')->group(function () {
     Route::get('/leads/search', [EmployeeLeadController::class, 'search']);
     Route::get('/leads/sales-employees', [EmployeeLeadController::class, 'salesEmployees']);
     Route::get('/leads', [EmployeeLeadController::class, 'index']);
@@ -302,6 +310,8 @@ Route::prefix('employee')->middleware(['auth:sanctum', 'employee'])->group(funct
     Route::get('/leads/{lead}', [EmployeeLeadController::class, 'show'])->whereNumber('lead');
     Route::post('/leads/{lead}/assign', [EmployeeLeadController::class, 'assign'])->whereNumber('lead');
     Route::match(['put', 'patch', 'post'], '/leads/{lead}/status', [EmployeeLeadController::class, 'updateStatus'])->whereNumber('lead');
+    Route::post('/leads/{lead}/reminder', [EmployeeLeadController::class, 'setReminder'])->whereNumber('lead');
+    Route::post('/leads/{lead}/reminders', [EmployeeLeadController::class, 'setReminder'])->whereNumber('lead');
 });
 
 /*
