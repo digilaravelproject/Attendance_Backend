@@ -141,7 +141,18 @@ When Facebook, JustDial, or Website is inactive, its integration does not insert
 incoming leads. When active, each new lead is assigned using the configured
 `primary` or `round_robin` employee allocation strategy.
 
-## 9. Test an active JustDial source
+## 9. Delete a lead source
+
+Deleting a source removes its employee-allocation rule. Existing leads keep
+their historical `source` value.
+
+```bash
+curl --location --request DELETE '{{base_url}}/api/admin/lead-sources/{{lead_source_id}}' \
+  --header 'Accept: application/json' \
+  --header 'Authorization: Bearer {{access_token}}'
+```
+
+## 10. Test an active JustDial source
 
 ```bash
 curl --location --request POST '{{base_url}}/api/justdial_leads' \

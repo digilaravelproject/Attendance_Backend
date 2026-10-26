@@ -96,6 +96,27 @@ class LeadSourceApiTest extends TestCase
         $this->assertDatabaseCount('leads', 0);
     }
 
+    public function test_authenticated_user_can_delete_a_lead_source_without_deleting_historical_leads(): void
+    {
+        $requester = User::factory()->create(['role' => 'employee', 'status' => 'Active']);
+        $source = LeadSource::where('source_key', 'referral')->firstOrFail();
+        Lead::create([
+            'source' => 'referral',
+            'full_name' => 'Historical Lead',
+            'status' => 'new',
+        ]);
+
+        $this->actingAs($requester)->deleteJson("/api/admin/lead-sources/{$source->id}")
+            ->assertOk()
+            ->assertJsonPath('message', 'Lead source deleted successfully.')
+            ->assertJsonPath('data.id', $source->id)
+            ->assertJsonPath('data.source_key', 'referral');
+
+        $this->assertDatabaseMissing('lead_sources', ['id' => $source->id]);
+        $this->assertDatabaseHas('leads', ['source' => 'referral', 'full_name' => 'Historical Lead']);
+        $this->actingAs($requester)->getJson("/api/admin/lead-sources/{$source->id}")->assertNotFound();
+    }
+
     public function test_manual_lead_uses_source_assignment_when_employee_is_not_supplied(): void
     {
         $requester = User::factory()->create(['role' => 'admin', 'status' => 'Active']);

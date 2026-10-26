@@ -107,6 +107,19 @@ class LeadSourceController extends Controller
         ]);
     }
 
+    public function destroy(LeadSource $leadSource): JsonResponse
+    {
+        $source = $leadSource->only(['id', 'name', 'source_key']);
+
+        $leadSource->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Lead source deleted successfully.',
+            'data' => $source,
+        ]);
+    }
+
     private function rules(bool $updating = false, ?LeadSource $source = null): array
     {
         $presence = $updating ? 'sometimes' : 'required';

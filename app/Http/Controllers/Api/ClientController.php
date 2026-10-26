@@ -96,11 +96,10 @@ class ClientController extends Controller
             'category' => ['sometimes', 'string', 'max:100'],
             'start_date' => ['required_without:project_id', 'date_format:Y-m-d'],
             'end_date' => ['required_without:project_id', 'date_format:Y-m-d', 'after_or_equal:start_date'],
-            'project_manager_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
+            'project_manager_id' => ['prohibited'],
             'estimated_value' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'status' => ['sometimes', Rule::in(['Not Started', 'In Progress', 'Completed', 'On Hold', 'Active'])],
-            'employee_ids' => ['sometimes', 'array'],
-            'employee_ids.*' => ['integer', 'distinct', 'exists:users,id'],
+            'employee_ids' => ['prohibited'],
         ]);
 
         $project = DB::transaction(function () use ($request, $client, $validated, $workingDays) {
@@ -123,16 +122,11 @@ class ClientController extends Controller
                 'start_date' => $validated['start_date'],
                 'end_date' => $validated['end_date'],
                 'working_days' => $dayData['working_days'],
-                'project_manager_id' => $validated['project_manager_id'] ?? null,
                 'agreed_value' => $validated['estimated_value'] ?? null,
                 'status' => ($validated['status'] ?? 'Not Started') === 'Active' ? 'In Progress' : ($validated['status'] ?? 'Not Started'),
                 'progress' => 0,
                 'created_by' => $request->user()->id,
             ]);
-            $members = collect($validated['employee_ids'] ?? [])
-                ->when($validated['project_manager_id'] ?? null, fn ($ids) => $ids->push($validated['project_manager_id']))
-                ->unique()->values()->all();
-            $project->members()->syncWithPivotValues($members, ['assigned_by' => $request->user()->id]);
             $project->timelineEvents()->create([
                 'event' => 'Assigned to Client',
                 'description' => 'Project assigned to '.$client->name.'.',

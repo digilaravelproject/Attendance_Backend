@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Client;
-use App\Models\Designation;
 use App\Models\Holiday;
 use App\Models\Lead;
 use App\Models\User;
@@ -39,10 +38,6 @@ class ClientProjectWorkflowApiTest extends TestCase
 
     public function test_converted_lead_creates_project_and_client_and_lead_details_include_it(): void
     {
-        $designation = Designation::create(['name' => 'Project Manager', 'hierarchy_level' => 'manager']);
-        $manager = User::factory()->create([
-            'role' => 'employee', 'status' => 'Active', 'designation_id' => $designation->id,
-        ]);
         $sales = User::factory()->create(['role' => 'employee', 'status' => 'Active', 'designation' => 'Sales Executive']);
         $lead = Lead::create([
             'lead_code' => 'LD-1218',
@@ -64,27 +59,32 @@ class ClientProjectWorkflowApiTest extends TestCase
             'priority' => 'Standard',
             'start_date' => '2026-10-23',
             'end_date' => '2026-11-22',
+            'working_day' => 28,
             'deliverables' => 'Client requirement and agreed deliverables.',
             'special_instructions' => 'Weekly review every Monday.',
-            'project_manager_id' => $manager->id,
-            'employee_ids' => [$sales->id],
         ])->assertCreated()
             ->assertJsonPath('data.lead_id', $lead->id)
             ->assertJsonPath('data.client.name', 'Messaging')
-            ->assertJsonPath('data.project_manager.id', $manager->id);
+            ->assertJsonPath('data.working_days', 28)
+            ->assertJsonPath('data.working_day', 28)
+            ->assertJsonPath('data.agreed_value', null)
+            ->assertJsonCount(0, 'data.members');
 
         $projectId = $created->json('data.id');
         $this->assertDatabaseHas('clients', ['lead_id' => $lead->id, 'name' => 'Messaging']);
-        $this->assertDatabaseHas('projects', ['id' => $projectId, 'lead_id' => $lead->id, 'agreed_value' => 50000]);
+        $this->assertDatabaseHas('projects', [
+            'id' => $projectId,
+            'lead_id' => $lead->id,
+            'working_days' => 28,
+            'agreed_value' => null,
+            'project_manager_id' => null,
+        ]);
 
         $this->actingAs($sales)->getJson("/api/employee/leads/{$lead->id}")
             ->assertOk()->assertJsonPath('data.converted_project.id', $projectId);
         $this->actingAs($sales)->getJson("/api/admin/projects/{$projectId}")
             ->assertOk()->assertJsonPath('data.client.name', 'Messaging');
         $this->actingAs($sales)->postJson("/api/admin/leads/{$lead->id}/projects", [])->assertStatus(409);
-
-        $this->actingAs($sales)->getJson('/api/admin/managers')
-            ->assertOk()->assertJsonPath('data.0.id', $manager->id);
     }
 
     public function test_client_crud_project_assignment_and_communication_crud_are_scoped(): void
@@ -116,10 +116,12 @@ class ClientProjectWorkflowApiTest extends TestCase
             'category' => 'Custom ERP / CRM',
             'start_date' => '2026-10-23',
             'end_date' => '2027-01-21',
-            'project_manager_id' => $employee->id,
             'estimated_value' => 550000,
             'status' => 'Active',
-        ])->assertCreated()->assertJsonPath('data.status', 'In Progress');
+        ])->assertCreated()
+            ->assertJsonPath('data.status', 'In Progress')
+            ->assertJsonPath('data.project_manager', null)
+            ->assertJsonCount(0, 'data.team');
 
         $this->actingAs($employee)->getJson("/api/admin/clients/{$clientId}/projects?status=active")
             ->assertOk()->assertJsonPath('counts.active', 1)
@@ -150,5 +152,40 @@ class ClientProjectWorkflowApiTest extends TestCase
 
         $emptyClient = Client::create(['name' => 'Delete Me', 'status' => 'Active', 'created_by' => $employee->id]);
         $this->actingAs($employee)->deleteJson("/api/admin/clients/{$emptyClient->id}")->assertOk();
+    }
+
+    public function test_removed_project_creation_fields_are_rejected(): void
+    {
+        $employee = User::factory()->create(['role' => 'employee', 'status' => 'Active']);
+        $lead = Lead::create([
+            'source' => 'website',
+            'full_name' => 'Converted Contact',
+            'status' => 'converted',
+            'assigned_to' => $employee->id,
+        ]);
+
+        $this->actingAs($employee)->postJson("/api/admin/leads/{$lead->id}/projects", [
+            'name' => 'Converted Project',
+            'category' => 'Web Development',
+            'start_date' => '2026-10-23',
+            'end_date' => '2026-11-22',
+            'working_day' => 28,
+            'deliverables' => 'Project deliverables.',
+            'project_manager_id' => $employee->id,
+            'employee_ids' => [$employee->id],
+            'agreed_value' => 50000,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['project_manager_id', 'employee_ids', 'agreed_value']);
+
+        $client = Client::create(['name' => 'Validation Client', 'status' => 'Active', 'created_by' => $employee->id]);
+        $this->actingAs($employee)->postJson("/api/admin/clients/{$client->id}/projects", [
+            'name' => 'Client Project',
+            'description' => 'Project description.',
+            'start_date' => '2026-10-23',
+            'end_date' => '2026-11-22',
+            'project_manager_id' => $employee->id,
+            'employee_ids' => [$employee->id],
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['project_manager_id', 'employee_ids']);
     }
 }

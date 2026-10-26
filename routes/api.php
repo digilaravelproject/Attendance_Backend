@@ -132,6 +132,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/lead-sources', [LeadSourceController::class, 'store']);
         Route::get('/lead-sources/{leadSource}', [LeadSourceController::class, 'show'])->whereNumber('leadSource');
         Route::match(['put', 'patch'], '/lead-sources/{leadSource}', [LeadSourceController::class, 'update'])->whereNumber('leadSource');
+        Route::delete('/lead-sources/{leadSource}', [LeadSourceController::class, 'destroy'])->whereNumber('leadSource');
         Route::get('/lead-statuses', [LeadStatusController::class, 'index']);
 
         // Shared CRM/project lookups and actions for any authenticated active user.

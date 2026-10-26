@@ -4,7 +4,7 @@ Set these Postman environment variables first:
 
 - `base_url_live` (example: `http://127.0.0.1:8000`)
 - `token`
-- `lead_id`, `project_id`, `client_id`, `manager_id`, `communication_id`
+- `lead_id`, `project_id`, `client_id`, `communication_id`
 
 All APIs below accept an authenticated admin token or an authenticated employee token. Employee results are limited to records the employee owns, manages, or is assigned to.
 
@@ -32,7 +32,7 @@ curl --location '{{base_url_live}}/api/admin/birthdays/upcoming?days=30' \
 
 ### Create a project from a converted lead
 
-Use `form-data` because project documents may be attached. Repeat `files[]` or `employee_ids[]` for multiple values.
+Use `form-data` because project documents may be attached.
 
 ```bash
 curl --location '{{base_url_live}}/api/admin/leads/{{lead_id}}/projects' \
@@ -43,15 +43,15 @@ curl --location '{{base_url_live}}/api/admin/leads/{{lead_id}}/projects' \
 --form 'priority="Standard"' \
 --form 'start_date="2026-10-23"' \
 --form 'end_date="2026-11-22"' \
+--form 'working_day="28"' \
 --form 'deliverables="Client requirement: Generator Dealer. Deliverables discussed during lead conversion."' \
 --form 'special_instructions="Client requested dark mode design; weekly progress review every Monday."' \
---form 'project_manager_id="{{manager_id}}"' \
---form 'employee_ids[]="{{manager_id}}"' \
---form 'agreed_value="50000"' \
 --form 'files[]=@"C:/path/to/proposal.pdf"'
 ```
 
 The lead must have `status=converted`. This operation also creates or updates the client from the lead and links the lead, client, and project.
+`working_day` is required. `project_manager_id`, `employee_ids`, and
+`agreed_value` are not accepted by this endpoint.
 
 ### Calculate working days inclusively
 
@@ -191,14 +191,13 @@ curl --location '{{base_url_live}}/api/admin/clients/{{client_id}}/projects' \
   "category": "Custom ERP / CRM",
   "start_date": "2026-10-23",
   "end_date": "2027-01-21",
-  "project_manager_id": {{manager_id}},
-  "employee_ids": [{{manager_id}}],
   "estimated_value": 550000,
   "status": "Active"
 }'
 ```
 
 `status=Active` is saved as the project status `In Progress`.
+`project_manager_id` and `employee_ids` are not accepted by this endpoint.
 
 ### Assign an existing project to a client
 
