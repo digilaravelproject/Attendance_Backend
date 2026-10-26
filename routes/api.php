@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AdminAttendanceController;
 use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AssignedShiftController;
+use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\DesignationManagementController;
 use App\Http\Controllers\Api\EmployeeAttendanceController;
@@ -16,15 +17,18 @@ use App\Http\Controllers\Api\LeadIntegrationStatusController;
 use App\Http\Controllers\Api\LeadSourceController;
 use App\Http\Controllers\Api\LeadStatusController;
 use App\Http\Controllers\Api\LeaveManagementController;
+use App\Http\Controllers\Api\ManagerController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PerformanceController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\Api\ProjectFromLeadController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SalaryController;
 use App\Http\Controllers\Api\ShiftManagementController;
 use App\Http\Controllers\Api\ShiftRotationController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\WorkingDayController;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 
@@ -128,6 +132,26 @@ Route::prefix('admin')->group(function () {
         Route::post('/lead-sources', [LeadSourceController::class, 'store']);
         Route::get('/lead-sources/{leadSource}', [LeadSourceController::class, 'show'])->whereNumber('leadSource');
         Route::match(['put', 'patch'], '/lead-sources/{leadSource}', [LeadSourceController::class, 'update'])->whereNumber('leadSource');
+        Route::get('/lead-statuses', [LeadStatusController::class, 'index']);
+
+        // Shared CRM/project lookups and actions for any authenticated active user.
+        Route::get('/working-days', WorkingDayController::class);
+        Route::get('/managers', ManagerController::class);
+        Route::post('/leads/{lead}/projects', ProjectFromLeadController::class)->whereNumber('lead');
+
+        Route::get('/clients/search', [ClientController::class, 'search']);
+        Route::get('/clients', [ClientController::class, 'index']);
+        Route::post('/clients', [ClientController::class, 'store']);
+        Route::get('/clients/{client}', [ClientController::class, 'show'])->whereNumber('client');
+        Route::match(['put', 'patch'], '/clients/{client}', [ClientController::class, 'update'])->whereNumber('client');
+        Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->whereNumber('client');
+        Route::post('/clients/{client}/projects', [ClientController::class, 'assignProject'])->whereNumber('client');
+        Route::get('/clients/{client}/projects', [ClientController::class, 'projects'])->whereNumber('client');
+        Route::get('/clients/{client}/communications', [ClientController::class, 'communications'])->whereNumber('client');
+        Route::post('/clients/{client}/communications', [ClientController::class, 'storeCommunication'])->whereNumber('client');
+        Route::get('/clients/{client}/communications/{communication}', [ClientController::class, 'showCommunication'])->whereNumber(['client', 'communication']);
+        Route::match(['put', 'patch'], '/clients/{client}/communications/{communication}', [ClientController::class, 'updateCommunication'])->whereNumber(['client', 'communication']);
+        Route::delete('/clients/{client}/communications/{communication}', [ClientController::class, 'destroyCommunication'])->whereNumber(['client', 'communication']);
 
         // Dynamic performance APIs. Visibility is enforced in the controller:
         // admin = all employees, manager = self/direct reports, employee = self.
@@ -171,7 +195,6 @@ Route::prefix('admin')->group(function () {
     Route::middleware(['auth:sanctum', 'admin', 'track.admin.action'])->group(function () {
         // CRM lead hub.
         Route::get('/lead-statuses/total', [LeadStatusController::class, 'total']);
-        Route::get('/lead-statuses', [LeadStatusController::class, 'index']);
         Route::post('/lead-statuses', [LeadStatusController::class, 'store']);
         Route::get('/lead-statuses/{leadStatus}', [LeadStatusController::class, 'show'])->whereNumber('leadStatus');
         Route::match(['put', 'patch'], '/lead-statuses/{leadStatus}', [LeadStatusController::class, 'update'])->whereNumber('leadStatus');

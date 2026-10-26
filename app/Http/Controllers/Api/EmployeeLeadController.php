@@ -44,6 +44,8 @@ class EmployeeLeadController extends Controller
             'createdBy:id,employee_id,name,role',
             'latestAssignment.actor:id,employee_id,name,role',
             'activeReminders.creator:id,employee_id,name',
+            'project.client',
+            'project.projectManager:id,employee_id,name,email,designation,avatar',
         ])->withCount('activeReminders');
 
         if (! empty($validated['q'])) {
@@ -191,6 +193,8 @@ class EmployeeLeadController extends Controller
             'latestAssignment.actor:id,employee_id,name,role',
             'histories.actor:id,employee_id,name',
             'activeReminders.creator:id,employee_id,name',
+            'project.client',
+            'project.projectManager:id,employee_id,name,email,designation,avatar',
         ]);
         $data = $this->leadData($lead, $request->user());
         $data['history'] = $lead->histories->map(fn ($history) => [
@@ -491,6 +495,7 @@ class EmployeeLeadController extends Controller
             'estimated_value' => $lead->estimated_value,
             'expected_closing_date' => $lead->expected_closing_date?->format('Y-m-d'),
             'notes' => $lead->notes,
+            'converted_project' => $lead->relationLoaded('project') ? $lead->project : null,
             'source_created_at' => $lead->source_created_at?->toIso8601String(),
             'created_at' => $lead->created_at?->toIso8601String(),
             'updated_at' => $lead->updated_at?->toIso8601String(),

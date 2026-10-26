@@ -58,13 +58,11 @@ class RequestedApiChangesTest extends TestCase
 
         $this->actingAs($admin)->getJson('/api/admin/birthdays/upcoming?days=30')
             ->assertOk()
-            ->assertJsonPath('total', 2)
-            ->assertJsonPath('upcoming_total', 1)
+            ->assertJsonPath('total', 1)
             ->assertJsonPath('data.0.name', 'Birthday Employee')
             ->assertJsonPath('data.0.birthday', '2026-10-20')
             ->assertJsonPath('data.0.days_until', 14)
-            ->assertJsonPath('data.1.role', 'admin')
-            ->assertJsonPath('data.1.birthday', null);
+            ->assertJsonMissingPath('data.1');
 
         $this->assertDatabaseHas('users', [
             'name' => 'Birthday Employee',

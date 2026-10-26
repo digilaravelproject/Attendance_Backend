@@ -181,17 +181,14 @@ class EmployeeAttendanceController extends Controller
         }
 
         $days = (int) $request->input('days', 30);
-        $users = $this->allUsersWithBirthdays();
-        $upcoming = $users->filter(fn (array $user) => $user['days_until'] !== null && $user['days_until'] <= $days)->values();
+        $upcoming = $this->birthdayEmployees($days);
 
         return response()->json([
             'status' => true,
-            'message' => 'Users and upcoming birthdays retrieved successfully.',
+            'message' => 'Upcoming employee birthdays retrieved successfully.',
             'days' => $days,
-            'total' => $users->count(),
-            'upcoming_total' => $upcoming->count(),
-            'data' => $users,
-            'upcoming_data' => $upcoming,
+            'total' => $upcoming->count(),
+            'data' => $upcoming,
         ]);
     }
 
@@ -362,7 +359,7 @@ class EmployeeAttendanceController extends Controller
             ->where(function ($query) {
                 $query->whereNull('status')->orWhere('status', '!=', 'Inactive');
             })
-            ->get(['id', 'employee_id', 'name', 'date_of_birth', 'designation', 'avatar'])
+            ->get(['id', 'employee_id', 'name', 'email', 'role', 'status', 'date_of_birth', 'designation', 'avatar'])
             ->map(function (User $employee) use ($today) {
                 $birthday = Carbon::parse($employee->date_of_birth);
                 $nextBirthday = $this->birthdayInYear($birthday, $today->year);
@@ -375,8 +372,12 @@ class EmployeeAttendanceController extends Controller
                     'id' => $employee->id,
                     'employee_id' => $employee->employee_id,
                     'name' => $employee->name,
+                    'email' => $employee->email,
+                    'role' => $employee->role,
+                    'status' => $employee->status,
                     'designation' => $employee->designation,
                     'avatar' => $employee->avatar,
+                    'date_of_birth' => $employee->date_of_birth->toDateString(),
                     'birthday' => $nextBirthday->toDateString(),
                     'birthday_label' => $daysUntil === 0 ? 'Today' : $nextBirthday->format('d M'),
                     'days_until' => $daysUntil,

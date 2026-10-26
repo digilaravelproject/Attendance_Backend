@@ -183,6 +183,8 @@ class LeadController extends Controller
         $lead->load([
             'assignedEmployee:id,employee_id,name,email,mobile_number,designation,avatar',
             'histories.actor:id,employee_id,name',
+            'project.client',
+            'project.projectManager:id,employee_id,name,email,designation,avatar',
         ]);
 
         $data = $this->leadData($lead);
@@ -380,6 +382,7 @@ class LeadController extends Controller
             'estimated_value' => $lead->estimated_value,
             'expected_closing_date' => $lead->expected_closing_date?->format('Y-m-d'),
             'notes' => $lead->notes,
+            'converted_project' => $lead->relationLoaded('project') ? $lead->project : null,
             'source_created_at' => $lead->source_created_at?->toIso8601String(),
             'created_at' => $lead->created_at?->toIso8601String(),
             'updated_at' => $lead->updated_at?->toIso8601String(),

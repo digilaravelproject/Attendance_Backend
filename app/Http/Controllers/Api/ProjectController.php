@@ -95,11 +95,11 @@ class ProjectController extends Controller
 
     public function show(Request $request, string $id): JsonResponse
     {
-        if (! $this->canManage($request->user())) {
-            return $this->forbidden();
-        }
         $project = Project::find($id);
         if (! $project) {
+            return $this->notFound();
+        }
+        if (! $this->canView($request->user(), $project)) {
             return $this->notFound();
         }
 
@@ -333,11 +333,18 @@ class ProjectController extends Controller
     {
         return [
             'id' => $project->id,
+            'lead_id' => $project->lead_id,
+            'client_id' => $project->client_id,
             'name' => $project->name,
             'description' => $project->description,
+            'deliverables' => $project->deliverables,
+            'special_instructions' => $project->special_instructions,
             'category' => $project->category,
+            'priority' => $project->priority,
             'start_date' => $project->start_date?->toDateString(),
             'end_date' => $project->end_date?->toDateString(),
+            'working_days' => $project->working_days,
+            'agreed_value' => $project->agreed_value,
             'status' => $project->status,
             'progress' => $project->progress,
             'members_count' => $project->members_count ?? ($project->relationLoaded('members') ? $project->members->count() : 0),
@@ -352,6 +359,9 @@ class ProjectController extends Controller
     {
         $project->load([
             'creator:id,name,email,role',
+            'lead',
+            'client',
+            'projectManager:id,employee_id,name,email,designation,avatar,status',
             'members:id,employee_id,name,email,designation,avatar,status',
             'files.uploader:id,name,email',
             'timelineEvents.actor:id,name,email',
@@ -372,6 +382,9 @@ class ProjectController extends Controller
         return [
             ...$this->summary($project),
             'created_by' => $project->creator,
+            'lead' => $project->lead,
+            'client' => $project->client,
+            'project_manager' => $project->projectManager,
             'overview' => [
                 'description' => $project->description,
                 'start_date' => $project->start_date?->toDateString(),
@@ -468,6 +481,18 @@ class ProjectController extends Controller
 
         return $user->designationDetails?->hierarchy_level === 'manager'
             || $user->roles()->where('name', 'like', '%manager%')->exists();
+    }
+
+    private function canView(?User $user, Project $project): bool
+    {
+        if (! $user || strtolower((string) $user->status) === 'inactive') {
+            return false;
+        }
+
+        return $this->canManage($user)
+            || $project->created_by === $user->id
+            || $project->project_manager_id === $user->id
+            || $project->members()->whereKey($user->id)->exists();
     }
 
     private function forbidden(): JsonResponse

@@ -76,6 +76,16 @@ class Lead extends Model
         return $this->hasMany(LeadReminder::class);
     }
 
+    public function project()
+    {
+        return $this->hasOne(Project::class);
+    }
+
+    public function client()
+    {
+        return $this->hasOne(Client::class);
+    }
+
     public function activeReminders()
     {
         return $this->hasMany(LeadReminder::class)->where('status', 'pending')->orderBy('remind_at');

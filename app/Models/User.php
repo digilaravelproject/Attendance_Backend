@@ -118,6 +118,11 @@ class User extends Authenticatable
         return $this->hasMany(Project::class, 'created_by');
     }
 
+    public function managedProjects()
+    {
+        return $this->hasMany(Project::class, 'project_manager_id');
+    }
+
     public function documents()
     {
         return $this->hasMany(AdminDocument::class);
